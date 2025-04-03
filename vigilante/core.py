@@ -2,7 +2,7 @@ import requests
 from .config import CONFIG
 from .nightcrawler import Nightcrawler
 from .utils import rotate_ip, export_json_result
-
+import platform
 
 class Vigilante:
     """
@@ -40,8 +40,8 @@ class Vigilante:
 
         # Configure Tor proxy settings (adjust port if necessary)
         self.proxy = {
-            "http": "socks5h://127.0.0.1:9150",
-            "https": "socks5h://127.0.0.1:9150"
+            "http": f"socks5h://127.0.0.1:{self._determine_proxy_port()}",
+            "https": f"socks5h://127.0.0.1:{self._determine_proxy_port()}"
         }
         
         # Set IP type based on security level
@@ -62,6 +62,34 @@ class Vigilante:
         # Check and store the current IP environment information
         self.ip_info = self._check_environment()
 
+    def _determine_proxy_port(self):
+        """
+        Determine which SOCKS port to use based on the platform.
+        """
+        system = platform.system().lower()
+        if "android" in system:
+            return 9050  # likely mobile
+        elif "windows" in system or "darwin" in system or "linux" in system:
+            # Desktop environments
+            # You can rotate among a list of fallback ports here
+            for port in [9150, 9250, 9350]:
+                if self._test_port(port):
+                    return port
+            return 9150  # fallback default
+        else:
+            return 9150  # safe default
+
+    def _test_port(self, port):
+        """
+        Test if a port is open on localhost.
+        """
+        import socket
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=1):
+                return True
+        except:
+            return False
+        
     def _check_environment(self):
         """
         Check the current network environment using an external IP service.
