@@ -10,7 +10,6 @@ setup(
         "stem",
         "lxml",
         "opencv-python",
-        "jsonlib-python3",
         "rstr",
         "numpy",
         "torpy",
