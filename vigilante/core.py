@@ -62,8 +62,23 @@ class Vigilante:
         self.nightcrawler = Nightcrawler(tor_session=self.tor_session)
 
         # Rotate IP if using dynamic IP security levels
+        if self.security == "2":
+            self.timeout += 5
+            self.headers["X-Security-Level"] = "Medium"
+        elif self.security == "3":
+            self.timeout += 10
+            self.headers["X-Security-Level"] = "High"
+            self.headers["User-Agent"] = rotate_user_agent()
+        elif self.security == "4":
+            self.timeout += 15
+            self.headers["X-Security-Level"] = "Ultra"
+            self.headers["User-Agent"] = rotate_user_agent()
+            self.enable_honeypot_protection = True
+
         if self.security in ["1", "2"]:
             rotate_ip()
+        if self.security in ["3", "4"]:
+            self._renew_tor_identity()
 
         # Check and store the current IP environment information
         self.ip_info = self._check_environment()
@@ -114,6 +129,20 @@ class Vigilante:
             "────────────────────────────────────────────\n"
         )
         return message
+
+   def _renew_tor_identity(self):
+        """
+        Renews the Tor circuit to obtain a new exit node.
+        """
+        import stem.control
+        try:
+            with stem.control.Controller.from_port(port=9051) as controller:
+                controller.authenticate(password="tor_password")
+                controller.signal(stem.Signal.NEWNYM)
+                print("[Vigilante] Tor circuit renewed.")
+        except Exception as e:
+            print(f"[ERROR] Failed to renew Tor circuit: {e}")
+
 
     def _check_environment(self):
         """
