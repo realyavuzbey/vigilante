@@ -1,4 +1,12 @@
-from .nightcrawler import Nightcrawler
-from .version import __version__
+"""
+Vigilante
 
-__all__ = ["Nightcrawler", "__version__"]
+Framework Author: Yavuz Bey
+https://vigilante.top
+"""
+
+from .core import Vigilante
+from .nightcrawler import Nightcrawler
+
+__all__ = ["Vigilante", "Nightcrawler"]
+__version__ = "0.1.0"
