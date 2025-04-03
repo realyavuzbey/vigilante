@@ -1,4 +1,4 @@
-### Vigilante OSINT Suite
+### **Vigilante OSINT Suite**
 
 **Vigilante** is a high-security, Tor-powered OSINT suite designed to **crawl**, **analyze**, and **monitor** dark web intelligence.  
 From passive recon to active content extraction, Vigilante is your entry point into the underground.
@@ -17,7 +17,7 @@ From passive recon to active content extraction, Vigilante is your entry point i
 > You can install Tor via [Tor Browser](https://www.torproject.org/download/) or run `tor` as a background service.
 <br>
 
-### Usage & Installation
+### **Usage & Installation**
 
 ```bash
 pip install vigilante
@@ -28,3 +28,13 @@ from vigilante import Vigilante
 v = Vigilante()
 print(v.whois())
 ```
+
+### **Legal Disclaimer**
+
+This project is intended for **educational and research purposes only**.  
+The author(s) of Vigilante do **not condone**, support, or take any responsibility for any misuse, illegal activity, or unethical behavior involving this software.
+
+By using this tool, you agree to take full responsibility for your actions.  
+Ensure all activities comply with local laws and regulations in your jurisdiction.
+
+**Use at your own risk. The Vigilante project and its contributors accept no liability.**
