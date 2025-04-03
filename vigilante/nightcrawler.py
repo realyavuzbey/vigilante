@@ -1,7 +1,7 @@
 import requests
 from urllib.parse import urljoin, urlparse
 import time
-from .data import TOR_PROXY
+from .config import TOR_PROXY
 
 class Nightcrawler:
     """
