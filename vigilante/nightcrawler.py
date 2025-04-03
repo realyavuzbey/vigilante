@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
-from .utils import export_json_result
-
+from .utils import export_json
+from .session import Session  # Assuming Session creates a default Tor-enabled session
 
 class Nightcrawler:
     """
@@ -15,18 +15,23 @@ class Nightcrawler:
         logger (callable): Logger function for outputting messages (default is print).
     """
 
-    def __init__(self, tor_session, export_json=False):
+    def __init__(self, tor_session=None, export_json=False):
         """
         Initialize the Nightcrawler instance.
 
         Args:
-            tor_session (requests.Session): The session configured with Tor proxies.
+            tor_session (requests.Session, optional): The session configured with Tor proxies.
+                If None, a default session will be created.
             export_json (bool, optional): If True, exports the results as a JSON file.
-                                          Defaults to False.
+                Defaults to False.
         """
-        self.tor = tor_session
-        self.logger = print
+        if tor_session is None:
+            # Create a default Tor session using the Session class
+            self.tor = Session().session
+        else:
+            self.tor = tor_session
         self.export_json = export_json
+        self.logger = print
 
     def _parse_tordex(self, html):
         """
@@ -134,6 +139,6 @@ class Nightcrawler:
                 all_results[name] = []
 
         if self.export_json:
-            export_json_result(all_results)
+            export_json(all_results)
 
         return all_results
