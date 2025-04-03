@@ -95,12 +95,13 @@ class Nightcrawler:
             })
         return results
 
-    def crawl(self, term):
+    def crawl(self, term, engine_overrides=None):
         """
         Crawl the dark web search engines for the given term.
 
         Args:
             term (str): The search term to query.
+            engine_overrides (dict, optional): Optional headers/timeouts per engine.
 
         Returns:
             dict: A dictionary with engine names as keys and lists of search results as values.
@@ -114,8 +115,13 @@ class Nightcrawler:
 
         for name, url in engines.items():
             try:
+                overrides = engine_overrides.get(name, {}) if engine_overrides else {}
+                engine_headers = overrides.get("headers", {})
+                engine_timeout = overrides.get("timeout", 15)
+            
                 self.logger(f"[{name}] Sending request: {url}")
-                response = self.tor.get(url)
+                response = self.tor.get(url, headers=engine_headers, timeout=engine_timeout)
+                
                 if response.status_code != 200:
                     self.logger(f"[{name}] HTTP {response.status_code}")
                     all_results[name] = []
