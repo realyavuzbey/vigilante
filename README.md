@@ -9,8 +9,12 @@ From passive recon to active content extraction, Vigilante is your entry point i
 
 ### Some tools this we have:
 
-1. **Nightcrawler** – Dark web search engine scraper using Tor.  
-   Crawls Tordex and Ahmia, parses HTML, and returns structured `.onion` results.
+### Nightcrawler
+- Supports multiple search engines including Ahmia and Tordex for deep web queries.
+- Returns structured results with title, description, URL, and domain extracted from dark web listings.
+- Automatically performs searches over the Tor network without manual interaction.
+- Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
+- Allows exporting results to timestamped JSON files for later analysis or integration.
 
 ### Usage & Installation
 
