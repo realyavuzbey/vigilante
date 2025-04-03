@@ -27,6 +27,6 @@ setup(
     ],
     url="https://github.com/realyavuzbey/vigilante",
     author="Yavuz Bey",
-    description="Dark web crawler & intelligence toolkit",
+    description="Dark Web Killer",
     python_requires=">=3.8"
 )
