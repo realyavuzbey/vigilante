@@ -28,3 +28,5 @@ From passive recon to active content extraction, Vigilante is your entry point i
 >     "https": "socks5h://127.0.0.1:9150"
 > }
 > ```
+
+<h1>I'll improve this tool whenever I want to no deadlines, no pressure.</h1>
