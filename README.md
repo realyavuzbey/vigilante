@@ -19,5 +19,3 @@ From passive recon to active content extraction, Vigilante is your entry point i
 > 
 > ```
 > 
-
-<h1>I'll improve this tool whenever I want to no deadlines, no pressure.</h1>
