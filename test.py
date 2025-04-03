@@ -1,6 +1,3 @@
-from vigilante import Vigilante
+from Vigilante import Vigilante, Nightcrawler
 
-v = Vigilante(security="0", export_json=True)
-result = v.nightcrawler.crawl("tordex", search_type="all")
-
-print(result)
+print(Nightcrawler(Vigilante().tor_session).crawl("tordex", search_type="all"))
