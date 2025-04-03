@@ -14,8 +14,6 @@ From passive recon to active content extraction, Vigilante is your entry point i
 
 ### Installation
 
-> ```bash
-> pip install vigilante
-> 
-> ```
-> 
+```bash
+pip install vigilante
+```
