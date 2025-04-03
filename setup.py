@@ -26,6 +26,7 @@ setup(
         "python-whois",
         "fake-useragent"
     ],
+    url="https://github.com/realyavuzbey/vigilante",
     author="Yavuz Bey",
     description="Dark web crawler & intelligence toolkit",
     python_requires=">=3.8"
