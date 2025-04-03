@@ -143,7 +143,7 @@ class Nightcrawler:
 
         # Tordex
         try:
-            tordex_url = f"http://http://tordexu73joywapk2txdr54jed4imqledpcvcuf75qsas2gwdgksvnyd.onion/search?onion=&query={encoded}"
+            tordex_url = f"http://tordexu73joywapk2txdr54jed4imqledpcvcuf75qsas2gwdgksvnyd.onion/search?onion=&query={encoded}"
             res = self.session.get(
                 tordex_url,
                 headers=self.headers,
