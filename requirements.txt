@@ -9,6 +9,12 @@ tqdm
 colorama
 fake-useragent
 python-dateutil
+opencv-python
+numpy
+click
+pillow
+yt-dlp
+
 urllib3
 pycountry
 dnspython
