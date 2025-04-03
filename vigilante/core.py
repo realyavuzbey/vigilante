@@ -3,6 +3,8 @@ from .config import CONFIG
 from .nightcrawler import Nightcrawler
 from .utils import rotate_ip, export_json_result
 import platform
+import datetime
+import uuid
 
 class Vigilante:
     """
@@ -89,7 +91,28 @@ class Vigilante:
                 return True
         except:
             return False
-        
+
+    def whois(self):
+        """
+        Just for fun: Returns a bold mission statement of the Vigilante OSINT Suite,
+        along with system info and a fake commit log, just for flex.
+        """
+        message = (
+            "\nVigilante OSINT Suite\n"
+            "────────────────────────────────────────────\n"
+            "Vigilante is a high-security, Tor-powered OSINT suite\n"
+            "designed to crawl, analyze, and monitor dark web intelligence.\n"
+            "From passive recon to active content extraction,\n"
+            "Vigilante is your entry point into the underground.\n"
+            "\n"
+            f"- Python Version: {platform.python_version()}\n"
+            f"- Platform: {platform.system()} {platform.release()}\n"
+            f"- Commit: {datetime.datetime.now().strftime('%Y%m%d')} - {uuid.uuid4().hex[:8]}\n"
+            "────────────────────────────────────────────\n"
+        )
+        print(message)
+        return message
+
     def _check_environment(self):
         """
         Check the current network environment using an external IP service.
