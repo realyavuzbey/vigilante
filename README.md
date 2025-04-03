@@ -11,7 +11,7 @@ From passive recon to active content extraction, Vigilante is your entry point i
 3. Automatically performs searches over the Tor network without manual interaction.
 4. Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
 5. Allows exporting results to timestamped JSON files for later analysis or integration.
-
+<br>
 
 > [!NOTE]
 > Ensure Tor is running locally. Default SOCKS proxy is usually at `127.0.0.1:9150` or `9050`.
