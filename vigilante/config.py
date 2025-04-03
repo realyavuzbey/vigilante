@@ -46,15 +46,5 @@ CONFIG = {
     },
     "TIMEOUT": 10,
     "MAX_THREADS": 50,
-    "TOR_ENABLED": False,
-    "TOR_PROXIES": [
-        {
-            "scheme": "http",
-            "proxy": "socks5h://127.0.0.1:9050"
-        },
-        {
-            "scheme": "https",
-            "proxy": "socks5h://127.0.0.1:9150"
-        }
-    ],
+    "TOR_ENABLED": False
 }
