@@ -12,8 +12,14 @@ From passive recon to active content extraction, Vigilante is your entry point i
 1. **Nightcrawler** – Dark web search engine scraper using Tor.  
    Crawls Tordex and Ahmia, parses HTML, and returns structured `.onion` results.
 
-### Installation
+### How To Use & Installation
 
 ```bash
 pip install vigilante
+```
+```python
+from vigilante import Vigilante
+
+v = Vigilante()
+print(v.whois())
 ```
