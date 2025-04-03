@@ -1,6 +1,5 @@
 import os
 import re
-import hashlib
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -13,11 +12,11 @@ class Nightcrawler:
     def __init__(self, tor_session=None, parent=None):
         self.headers = CONFIG["HEADERS"]
         self.timeout = CONFIG["TIMEOUT"]
-        self.proxy = CONFIG.get("TOR_PROXY")
         self.session = tor_session or requests.Session()
         self.export = CONFIG.get("EXPORT", True)
         self.logger = None
         self.parent = parent
+        self.proxy = parent.proxy if parent and hasattr(parent, "proxy") else CONFIG.get("TOR_PROXY")
 
     def crawl(self, query, search_type="all", export_json=True):
         encoded = quote(query)
@@ -36,9 +35,9 @@ class Nightcrawler:
         if export_json:
             os.makedirs("results", exist_ok=True)
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            export_json_result(result, class_name=f"Crawl_{query}_{ts}")
+            export_json_result(result, class_name=f"Nightcrawler_{query}_{ts}")
             if self.logger:
-                self.logger.add(f"[UnifiedCrawler] Exported Crawl_{query}_{ts}.json")
+                self.logger.add(f"[Nightcrawler] Exported Nightcrawler_{query}_{ts}.json")
 
         return result
 
@@ -54,7 +53,6 @@ class Nightcrawler:
         }
 
         results = {}
-
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = {
                 executor.submit(self._check_url, url): name
@@ -64,12 +62,11 @@ class Nightcrawler:
                 name = futures[future]
                 exists, _ = future.result()
                 results[name] = exists
-
         return results
 
     def _check_url(self, url):
         try:
-            res = self.session.get(url, headers=self.headers, proxies={"http": self.proxy, "https": self.proxy}, timeout=self.timeout)
+            res = self.session.get(url, headers=self.headers, timeout=self.timeout)
             return res.status_code == 200, url
         except:
             return False, url
@@ -91,7 +88,7 @@ class Nightcrawler:
                     for a in soup.find_all("a", href=True):
                         text = a.get_text(strip=True)
                         if query.lower() in text.lower():
-                            items.append({"type": "text", "title": text, "link": a['href']})
+                            items.append({"type": "text", "title": text, "link": a["href"]})
 
                 if search_type in ["image", "all"]:
                     for img in soup.find_all("img"):
@@ -114,12 +111,13 @@ class Nightcrawler:
     def _search_dark_web(self, encoded):
         results = {}
 
-        # Ahmia
+        # AHmia
         try:
             ahmia_url = f"http://ahmia.fi/search/?q={encoded}"
             res = self.session.get(ahmia_url, headers=self.headers, timeout=self.timeout)
             soup = BeautifulSoup(res.text, "html.parser")
             items = []
+
             for li in soup.select("li.result"):
                 title_tag = li.find("h4")
                 desc_tag = li.find("p")
@@ -141,7 +139,7 @@ class Nightcrawler:
         except Exception as e:
             results["ahmia"] = [{"error": str(e)}]
 
-        # Tordex
+        # Tordex (Requires working .onion proxy via Tor)
         try:
             tordex_url = f"http://tordexu73joywapk2txdr54jed4imqledpcvcuf75qsas2gwdgksvnyd.onion/search?onion=&query={encoded}"
             res = self.session.get(
@@ -170,7 +168,7 @@ class Nightcrawler:
                         "description": desc_text,
                         "domain": domain
                     })
-                results["tordex"] = items if items else [{"info": "no matches"}]
+            results["tordex"] = items if items else [{"info": "no matches"}]
         except Exception as e:
             results["tordex"] = [{"error": str(e)}]
 
@@ -188,15 +186,19 @@ class Nightcrawler:
                 html = self.session.get(url, headers=self.headers, timeout=10).text
                 soup = BeautifulSoup(html, "html.parser")
                 found = set()
+
                 for tag in soup.find_all(src=True):
                     found.add(urljoin(url, tag["src"]))
+
                 for tag in soup.find_all(href=True):
                     found.add(urljoin(url, tag["href"]))
+
                 for tag in soup.find_all(style=True):
-                    style = tag['style']
-                    matches = re.findall(r'url\((.*?)\)', style)
+                    style = tag["style"]
+                    matches = re.findall(r"url(.*?)", style)
                     for m in matches:
                         found.add(urljoin(url, m.strip(' "\'')))
+
                 return [link for link in found if any(link.lower().endswith(ext) for ext in exts)]
             except:
                 return []
