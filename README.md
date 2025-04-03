@@ -7,4 +7,4 @@ Welcome to the **Vigilante** package documentation.
 
 ## Installation
 ```bash
-pip install vigilantesoon...
+pip install vigilante
