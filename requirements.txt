@@ -10,3 +10,10 @@ colorama
 fake-useragent
 python-dateutil
 urllib3
+pycountry
+dnspython
+tldextract
+python-whois
+faker
+torpy
+rstr
