@@ -4,9 +4,7 @@
 From passive recon to active content extraction, Vigilante is your entry point into the underground.
 <br>
 
-### Some tools this we have:
-<br>
-
+#### Some tools this we have:
 ### **Nightcrawler**
 1. Supports multiple search engines including Ahmia and Tordex for deep web queries.
 2. Returns structured results with title, description, URL, and domain extracted from dark web listings.
