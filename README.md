@@ -14,19 +14,10 @@ From passive recon to active content extraction, Vigilante is your entry point i
 
 ### Installation
 
-> [!WARNING]
-> If Vigilante cannot automatically detect your Tor proxy port,  
-> you can manually configure it in the `core.py` file by editing the `self.proxy` dictionary:
-
 > ```bash
 > pip install vigilante
+> 
 > ```
-
-> ```python
-> self.proxy = {
->     "http": "socks5h://127.0.0.1:9150",
->     "https": "socks5h://127.0.0.1:9150"
-> }
-> ```
+> 
 
 <h1>I'll improve this tool whenever I want to no deadlines, no pressure.</h1>
