@@ -24,7 +24,7 @@ class Vigilante:
         ip_info (dict): Information about the current IP environment.
         
     Methods:
-        whois(): Prints a styled mission statement along with platform and Python info.
+        whois(): A styled mission statement along with platform and Python info.
         crawl(term): Returns structured search results from Ahmia, Tordex and more data.
     """
 
@@ -111,10 +111,8 @@ class Vigilante:
             "\n"
             f"- Python Version: {platform.python_version()}\n"
             f"- Platform: {platform.system()} {platform.release()}\n"
-            f"- Commit: {datetime.datetime.now().strftime('%Y%m%d')} - {uuid.uuid4().hex[:8]}\n"
             "────────────────────────────────────────────\n"
         )
-        print(message)
         return message
 
     def _check_environment(self):
