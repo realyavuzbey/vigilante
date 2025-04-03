@@ -1,0 +1,12 @@
+requests[socks]
+python-dotenv
+aiohttp
+aiofiles
+beautifulsoup4
+stem
+lxml
+tqdm
+colorama
+fake-useragent
+python-dateutil
+urllib3
