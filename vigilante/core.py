@@ -1,5 +1,10 @@
+import os
+import time
+import shutil
 import requests
 import platform
+import threading
+
 from .config import CONFIG, ua
 from .nightcrawler import Nightcrawler
 from .utils import rotate_ip, export_json, rotate_user_agent
@@ -79,6 +84,7 @@ class Vigilante:
 
         # Check and store the current IP environment information
         self.ip_info = self._check_environment()
+        self._start_pycache_cleaner(interval=60)
 
     def _set_proxy(self):
         """
@@ -198,3 +204,30 @@ class Vigilante:
                 "ip_type": self.ip_type,
                 "proxy_used": self.proxy
             }
+        
+    def _delete_pycache_dirs(self, base_dir):
+        """
+        Recursively deletes all __pycache__ directories inside given base_dir.
+        """
+        for root, dirs, files in os.walk(base_dir):
+            for dir_name in dirs:
+                if dir_name == "__pycache__":
+                    pycache_path = os.path.join(root, dir_name)
+                    try:
+                        shutil.rmtree(pycache_path)
+                        print(f"[✓] Deleted: {pycache_path}")
+                    except Exception as e:
+                        print(f"[!] Failed to delete {pycache_path}: {e}")
+
+    def _start_pycache_cleaner(self, interval=60):
+        """
+        Starts a background thread that deletes __pycache__ folders every 'interval' seconds.
+        """
+        def cleaner():
+            while True:
+                self._delete_pycache_dirs(os.getcwd())  # Or specify vigilante path
+                print(f"[Vigilante] Waiting {interval} seconds for next pycache cleanup...\n")
+                time.sleep(interval)
+
+        t = threading.Thread(target=cleaner, daemon=True)
+        t.start()
