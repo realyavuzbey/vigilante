@@ -38,7 +38,7 @@ class Vigilante:
 
         Args:
             security (str, optional): The security level. Defaults to "1".
-            export_json (bool, optional): If True, exports results in JSON. Defaults to False.
+            export_as (str, optional): Export format. One of "json", "csv", "markdown", or "txt". Defaults to None.
         """
         self.security = str(security)
         self.export_as = export_as
