@@ -5,11 +5,11 @@ From passive recon to active content extraction, Vigilante is your entry point i
 <br>
 
 > ### **Nightcrawler**
-1. Supports multiple search engines including Ahmia and Tordex for deep web queries.
-2. Returns structured results with title, description, URL, and domain extracted from dark web listings.
-3. Automatically performs searches over the Tor network without manual interaction.
-4. Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
-5. Allows exporting results to timestamped JSON files for later analysis or integration.
+- Supports multiple search engines including Ahmia and Tordex for deep web queries.
+- Returns structured results with title, description, URL, and domain extracted from dark web listings.
+- Automatically performs searches over the Tor network without manual interaction.
+- Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
+- Allows exporting results to timestamped JSON files for later analysis or integration.
 <br>
 
 > [!NOTE]
