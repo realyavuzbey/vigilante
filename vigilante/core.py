@@ -1,10 +1,9 @@
 import requests
-from .config import CONFIG
-from .nightcrawler import Nightcrawler
-from .utils import rotate_ip, export_json_result
 import platform
-import datetime
-import uuid
+from .config import CONFIG, ua
+from .nightcrawler import Nightcrawler
+from .utils import rotate_ip, export_json, rotate_user_agent
+from .session import Session
 
 class Vigilante:
     """
@@ -44,24 +43,22 @@ class Vigilante:
         self.timeout = CONFIG["TIMEOUT"]
         self.tor_enabled = True
 
-        # Configure Tor proxy settings (adjust port if necessary)
-        self.proxy = {
-            "http": f"socks5h://127.0.0.1:{self._determine_proxy_port()}",
-            "https": f"socks5h://127.0.0.1:{self._determine_proxy_port()}"
-        }
-        
-        # Set IP type based on security level
-        self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
+        # Initialize session wrapper and obtain default Tor session
+        self.session_wrapper = Session()
+        self.tor_session = self.session_wrapper.session
 
-        # Setup Tor-enabled session
-        self.tor_session = requests.Session()
+        # Set up the proxy based on the platform (mobile or desktop)
+        self.proxy = self._set_proxy()
         self.tor_session.proxies.update(self.proxy)
         self.tor_session.headers.update(self.headers)
 
         # Initialize Nightcrawler with the Tor session
         self.nightcrawler = Nightcrawler(tor_session=self.tor_session)
 
-        # Rotate IP if using dynamic IP security levels
+        # Set IP type based on security level
+        self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
+
+        # Security adjustments
         if self.security == "2":
             self.timeout += 5
             self.headers["X-Security-Level"] = "Medium"
@@ -83,22 +80,49 @@ class Vigilante:
         # Check and store the current IP environment information
         self.ip_info = self._check_environment()
 
-    def _determine_proxy_port(self):
+    def _set_proxy(self):
         """
-        Determine which SOCKS port to use based on the platform.
+        Determine and set the SOCKS proxy based on the platform.
+
+        Returns:
+            dict: Proxy configuration for Tor connections.
         """
         system = platform.system().lower()
         if "android" in system:
-            return 9050  # likely mobile
+            # Mobile platform uses port 9050
+            return {
+                "http": "socks5h://127.0.0.1:9050",
+                "https": "socks5h://127.0.0.1:9050"
+            }
         elif "windows" in system or "darwin" in system or "linux" in system:
-            # Desktop environments
-            # You can rotate among a list of fallback ports here
+            # Desktop platforms use port 9150 (or fallbacks if needed)
+            proxy_port = self._determine_proxy_port()
+            return {
+                "http": f"socks5h://127.0.0.1:{proxy_port}",
+                "https": f"socks5h://127.0.0.1:{proxy_port}"
+            }
+        else:
+            # Safe default for other platforms
+            return {
+                "http": "socks5h://127.0.0.1:9150",
+                "https": "socks5h://127.0.0.1:9150"
+            }
+
+    def _determine_proxy_port(self):
+        """
+        Determine which SOCKS port to use based on the platform.
+        For desktops, try 9150, then 9250, then 9350.
+        """
+        system = platform.system().lower()
+        if "android" in system:
+            return 9050
+        elif "windows" in system or "darwin" in system or "linux" in system:
             for port in [9150, 9250, 9350]:
                 if self._test_port(port):
                     return port
-            return 9150  # fallback default
+            return 9150
         else:
-            return 9150  # safe default
+            return 9150
 
     def _test_port(self, port):
         """
@@ -113,8 +137,7 @@ class Vigilante:
 
     def whois(self):
         """
-        Just for fun: Returns a bold mission statement of the Vigilante OSINT Suite,
-        along with system info and a fake commit log, just for flex.
+        Returns a styled mission statement of the Vigilante OSINT Suite with system info.
         """
         message = (
             "\nVigilante OSINT Suite\n"
@@ -130,7 +153,7 @@ class Vigilante:
         )
         return message
 
-   def _renew_tor_identity(self):
+    def _renew_tor_identity(self):
         """
         Renews the Tor circuit to obtain a new exit node.
         """
@@ -143,14 +166,12 @@ class Vigilante:
         except Exception as e:
             print(f"[ERROR] Failed to renew Tor circuit: {e}")
 
-
     def _check_environment(self):
         """
-        Check the current network environment using an external IP service.
+        Checks the current network environment using an external IP service.
 
         Returns:
-            dict: A dictionary containing IP information along with security level,
-                  IP type, and proxy details.
+            dict: Contains IP information, security level, IP type, and proxy details.
         """
         try:
             ip_service = "https://api.ipify.org?format=json"
@@ -159,12 +180,9 @@ class Vigilante:
                 "timeout": self.timeout,
                 "proxies": self.proxy
             }
-
-            # Adjust settings for higher security level if needed
             if self.security == "2":
                 kwargs["timeout"] += 5
                 kwargs["headers"]["X-Security-Level"] = "High"
-
             response = requests.get(ip_service, **kwargs)
             ip_data = response.json() if response.status_code == 200 else {}
             ip_data.update({
@@ -173,7 +191,6 @@ class Vigilante:
                 "proxy_used": self.proxy
             })
             return ip_data
-
         except Exception as e:
             return {
                 "error": str(e),
