@@ -14,7 +14,6 @@ numpy
 click
 pillow
 yt-dlp
-
 urllib3
 pycountry
 dnspython
