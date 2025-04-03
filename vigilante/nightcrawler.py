@@ -47,7 +47,6 @@ class Nightcrawler:
             desc_tag = block.find("p")
 
             title = title_tag.get_text(strip=True) if title_tag else "No Title"
-            # Extract the text from the <a> tag to get the full .onion URL
             url_text = a_tag.get_text(strip=True) if a_tag else ""
             description = desc_tag.get_text(strip=True) if desc_tag else "No Description"
             domain = urlparse(url_text).netloc or "Unknown"
@@ -80,7 +79,6 @@ class Nightcrawler:
             title = title_tag.get_text(strip=True) if title_tag else "No Title"
             a_tag = title_tag.find("a") if title_tag else None
             raw_href = a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
-            # Prepend the base URL if the link is relative
             full_url = f"https://ahmia.fi{raw_href}" if raw_href.startswith("/") else raw_href
             description = desc_tag.get_text(strip=True) if desc_tag else "No Description"
             domain = cite_tag.get_text(strip=True) if cite_tag else "Unknown"
