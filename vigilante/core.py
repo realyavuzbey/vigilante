@@ -22,6 +22,10 @@ class Vigilante:
         tor_session (requests.Session): A session configured with Tor proxies.
         nightcrawler (Nightcrawler): Instance for crawling dark web search engines.
         ip_info (dict): Information about the current IP environment.
+        
+    Methods:
+        whois(): Prints a styled mission statement along with platform and Python info.
+        crawl(term): Returns structured search results from Ahmia, Tordex and more data.
     """
 
     def __init__(self, security="1", export_json=False):
