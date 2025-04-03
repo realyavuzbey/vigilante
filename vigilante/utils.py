@@ -3,7 +3,21 @@ import stem
 import json
 import stem.control
 from datetime import datetime
+from .config import ua
 
+def rotate_user_agent():
+    """
+    Returns a random user-agent string.
+    If fake-useragent fails, falls back to a default UA.
+    """
+    try:
+        return ua.random if ua else _fallback_ua()
+    except Exception:
+        return _fallback_ua()
+
+def _fallback_ua():
+    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    
 def export_json(data, class_name="Result", output_dir=None):
     """
     Exports JSON data to a timestamped file inside a 'results' folder in the current working directory.
