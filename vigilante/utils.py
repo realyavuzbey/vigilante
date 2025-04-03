@@ -21,7 +21,7 @@ def _fallback_ua():
     
 def export_data(data, export_as="json", class_name="Result", output_dir=None):
     """
-    Exports data in json, csv, or markdown format.
+    Exports data in json, csv, txt, or markdown format.
     """
     if output_dir is None:
         output_dir = os.path.join(os.getcwd(), "results")
@@ -59,6 +59,15 @@ def export_data(data, export_as="json", class_name="Result", output_dir=None):
                         f.write(f"{entry.get('description', '')}  \n")
                         f.write(f"[Link]({entry.get('url', '')}) — `{entry.get('domain', '')}`\n\n")
 
+        elif export_as == "txt":
+            with open(filepath, "w", encoding="utf-8") as f:
+                for engine, entries in data.items():
+                    f.write(f"=== {engine} ===\n")
+                    for entry in entries:
+                        f.write(f"{entry.get('title', 'No Title')}\n")
+                        f.write(f"{entry.get('description', '')}\n")
+                        f.write(f"{entry.get('url', '')} ({entry.get('domain', '')})\n")
+                        f.write("\n")
         else:
             return f"[Export Error] Unknown format: {export_as}"
 
