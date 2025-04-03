@@ -1,4 +1,3 @@
-import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
 from .utils import export_data
@@ -6,35 +5,33 @@ from .session import Session
 
 class Nightcrawler:
     """
-    Nightcrawler searches for a given term on dark web search engines (Tordex and Ahmia)
-    using a Tor-enabled session. It parses the HTML results and returns structured data.
+    Nightcrawler performs dark web keyword search via Tor,
+    supports multiple engines and exports results in multiple formats.
 
     Attributes:
-        tor (requests.Session): The Tor-enabled session used for sending HTTP requests.
-        export_as (str): Format to export the results ("json", "csv", "markdown").
-        logger (callable): Logger function for outputting messages (default is print).
+        tor (requests.Session): A Tor-enabled requests session.
+        export_as (str or None): Export format - "json", "csv", "markdown", "txt" or None.
+        logger (callable): Output function (default is print).
     """
 
     def __init__(self, tor_session=None, export_as=None):
         """
-        Initialize the Nightcrawler instance.
-
         Args:
-            tor_session (requests.Session, optional): The session configured with Tor proxies.
-                If None, a default session will be created.
-            export_as (str, optional): Format to export results ("json", "csv", "markdown").
-                Defaults to None (no export).
+            tor_session (requests.Session, optional): Custom Tor-enabled session.
+                If not provided, a default Tor session will be used.
+            export_as (str, optional): Output format for results.
+                Supported values: "json", "csv", "markdown", "txt".
+                If None, no export will be performed.
         """
-        if tor_session is None:
-            self.tor = Session().session
-        else:
-            self.tor = tor_session
+        self.tor = tor_session if tor_session else Session().session
         self.export_as = export_as
         self.logger = print
 
     def _parse_tordex(self, html):
+        """Parses HTML from Tordex and extracts structured results."""
         results = []
         soup = BeautifulSoup(html, "html.parser")
+
         for block in soup.select("div.result"):
             title_tag = block.find("h5")
             link_tag = block.find("h6")
@@ -52,11 +49,14 @@ class Nightcrawler:
                 "description": description,
                 "domain": domain
             })
+
         return results
 
     def _parse_ahmia(self, html):
+        """Parses HTML from Ahmia and extracts structured results."""
         results = []
         soup = BeautifulSoup(html, "html.parser")
+
         for li in soup.select("li.result"):
             title_tag = li.find("h4")
             desc_tag = li.find("p")
@@ -75,18 +75,19 @@ class Nightcrawler:
                 "description": description,
                 "domain": domain
             })
+
         return results
 
     def crawl(self, term, engine_overrides=None):
         """
-        Crawl the dark web search engines for the given term.
+        Searches for the provided term on supported dark web search engines.
 
         Args:
-            term (str): The search term to query.
-            engine_overrides (dict, optional): Optional headers/timeouts per engine.
+            term (str): Search keyword.
+            engine_overrides (dict, optional): Custom headers or timeouts per engine.
 
         Returns:
-            dict: A dictionary with engine names as keys and lists of search results as values.
+            dict: Search results structured per engine.
         """
         engines = {
             "Tordex": f"http://tordexu73joywapk2txdr54jed4imqledpcvcuf75qsas2gwdgksvnyd.onion/search?query={quote(term)}",
@@ -101,7 +102,7 @@ class Nightcrawler:
                 engine_headers = overrides.get("headers", {})
                 engine_timeout = overrides.get("timeout", 15)
 
-                self.logger(f"[{name}] Sending request: {url}")
+                self.logger(f"[{name}] Fetching: {url}")
                 response = self.tor.get(url, headers=engine_headers, timeout=engine_timeout)
 
                 if response.status_code != 200:
@@ -110,15 +111,10 @@ class Nightcrawler:
                     continue
 
                 html = response.text
+                parser = getattr(self, f"_parse_{name.lower()}", None)
+                parsed = parser(html) if parser else []
 
-                if name == "Tordex":
-                    parsed = self._parse_tordex(html)
-                elif name == "Ahmia":
-                    parsed = self._parse_ahmia(html)
-                else:
-                    parsed = []
-
-                self.logger(f"[{name}] {len(parsed)} results found.")
+                self.logger(f"[{name}] {len(parsed)} result(s) found.")
                 all_results[name] = parsed
 
             except Exception as e:
