@@ -7,7 +7,7 @@ import threading
 
 from .config import CONFIG, ua
 from .nightcrawler import Nightcrawler
-from .utils import rotate_ip, export_json, rotate_user_agent
+from .utils import rotate_ip, export_data, rotate_user_agent
 from .session import Session
 
 class Vigilante:
@@ -32,7 +32,7 @@ class Vigilante:
         crawl(term): Returns structured search results from Ahmia, Tordex and more data.
     """
 
-    def __init__(self, security="1", export_json=False):
+    def __init__(self, security="1", export_as=None):
         """
         Initialize the Vigilante instance with security settings and a Tor session.
 
@@ -41,7 +41,7 @@ class Vigilante:
             export_json (bool, optional): If True, exports results in JSON. Defaults to False.
         """
         self.security = str(security)
-        self.export_json = export_json
+        self.export_as = export_as
 
         # Load configuration from CONFIG
         self.headers = CONFIG["HEADERS"]
@@ -58,7 +58,7 @@ class Vigilante:
         self.tor_session.headers.update(self.headers)
 
         # Initialize Nightcrawler with the Tor session
-        self.nightcrawler = Nightcrawler(tor_session=self.tor_session)
+        self.nightcrawler = Nightcrawler(tor_session=self.tor_session, export_as=self.export_as)
 
         # Set IP type based on security level
         self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
