@@ -2,19 +2,19 @@ import os
 import csv
 import stem
 import json
+import random
 import stem.control
 from datetime import datetime
-from .config import ua
+from .config import BLACKLISTED_UAS, FAKE_UAS
 
 def rotate_ua():
     """
-    Returns a random user-agent string.
-    If fake-useragent fails, falls back to a default UA.
+    Returns a random user-agent from FAKE_UAS, avoiding blacklisted ones.
     """
-    try:
-        return ua.random if ua else _fallback_ua()
-    except Exception:
-        return _fallback_ua()
+    while True:
+        agent = random.choice(FAKE_UAS)
+        if not any(bad.lower() in agent.lower() for bad in BLACKLISTED_UAS):
+            return agent
 
 def _fallback_ua():
     return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
