@@ -213,11 +213,7 @@ class Vigilante:
             for dir_name in dirs:
                 if dir_name == "__pycache__":
                     pycache_path = os.path.join(root, dir_name)
-                    try:
-                        shutil.rmtree(pycache_path)
-                        print(f"[✓] Deleted: {pycache_path}")
-                    except Exception as e:
-                        print(f"[!] Failed to delete {pycache_path}: {e}")
+                    shutil.rmtree(pycache_path)
 
     def _start_pycache_cleaner(self, interval=60):
         """
@@ -225,8 +221,7 @@ class Vigilante:
         """
         def cleaner():
             while True:
-                self._delete_pycache_dirs(os.getcwd())  # Or specify vigilante path
-                print(f"[Vigilante] Waiting {interval} seconds for next pycache cleanup...\n")
+                self._delete_pycache_dirs(os.getcwd())
                 time.sleep(interval)
 
         t = threading.Thread(target=cleaner, daemon=True)
