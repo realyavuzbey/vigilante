@@ -7,7 +7,7 @@ import threading
 
 from .config import CONFIG, ua
 from .nightcrawler import Nightcrawler
-from .utils import rotate_ip, export_data, rotate_user_agent
+from .utils import rotate_ip, export_data, rotate_ua
 from .session import Session
 
 class Vigilante:
@@ -70,11 +70,11 @@ class Vigilante:
         elif self.security == "3":
             self.timeout += 10
             self.headers["X-Security-Level"] = "High"
-            self.headers["User-Agent"] = rotate_user_agent()
+            self.headers["User-Agent"] = rotate_ua()
         elif self.security == "4":
             self.timeout += 15
             self.headers["X-Security-Level"] = "Ultra"
-            self.headers["User-Agent"] = rotate_user_agent()
+            self.headers["User-Agent"] = rotate_ua()
             self.enable_honeypot_protection = True
 
         if self.security in ["1", "2"]:
