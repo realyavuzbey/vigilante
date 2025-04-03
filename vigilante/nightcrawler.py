@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
 from .utils import export_json
-from .session import Session  # Assuming Session creates a default Tor-enabled session
+from .session import Session
 
 class Nightcrawler:
     """
@@ -26,7 +26,6 @@ class Nightcrawler:
                 Defaults to False.
         """
         if tor_session is None:
-            # Create a default Tor session using the Session class
             self.tor = Session().session
         else:
             self.tor = tor_session
