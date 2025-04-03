@@ -29,6 +29,7 @@ v = Vigilante()
 print(v.whois())
 ```
 <br>
+
 ### **Legal Disclaimer**
 
 This project is intended for **educational and research purposes only**.  
