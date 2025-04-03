@@ -4,11 +4,14 @@ import json
 import stem.control
 from datetime import datetime
 
-def export_json_result(data, class_name="Result", output_dir="vigilante/results"):
+def export_json_result(data, class_name="Result", output_dir=None):
     """
-    Exports JSON data to a timestamped file inside vigilante/results/.
+    Exports JSON data to a timestamped file inside a 'results' folder in the current working directory.
     Filename format: ClassName_YYYYMMDD_HHMMSS.json
     """
+    if output_dir is None:
+        output_dir = os.path.join(os.getcwd(), "results")
+    
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
