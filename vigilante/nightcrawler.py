@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
-from .utils import export_json
+from .utils import export_data
 from .session import Session
 
 class Nightcrawler:
@@ -11,37 +11,28 @@ class Nightcrawler:
 
     Attributes:
         tor (requests.Session): The Tor-enabled session used for sending HTTP requests.
-        export_json (bool): Flag to export the results in JSON format.
+        export_as (str): Format to export the results ("json", "csv", "markdown").
         logger (callable): Logger function for outputting messages (default is print).
     """
 
-    def __init__(self, tor_session=None, export_json=False):
+    def __init__(self, tor_session=None, export_as=None):
         """
         Initialize the Nightcrawler instance.
 
         Args:
             tor_session (requests.Session, optional): The session configured with Tor proxies.
                 If None, a default session will be created.
-            export_json (bool, optional): If True, exports the results as a JSON file.
-                Defaults to False.
+            export_as (str, optional): Format to export results ("json", "csv", "markdown").
+                Defaults to None (no export).
         """
         if tor_session is None:
             self.tor = Session().session
         else:
             self.tor = tor_session
-        self.export_json = export_json
+        self.export_as = export_as
         self.logger = print
 
     def _parse_tordex(self, html):
-        """
-        Parse Tordex HTML to extract search results.
-
-        Args:
-            html (str): HTML content returned from Tordex.
-
-        Returns:
-            list: A list of dictionaries containing search results.
-        """
         results = []
         soup = BeautifulSoup(html, "html.parser")
         for block in soup.select("div.result"):
@@ -64,15 +55,6 @@ class Nightcrawler:
         return results
 
     def _parse_ahmia(self, html):
-        """
-        Parse Ahmia HTML to extract search results.
-
-        Args:
-            html (str): HTML content returned from Ahmia.
-
-        Returns:
-            list: A list of dictionaries containing search results.
-        """
         results = []
         soup = BeautifulSoup(html, "html.parser")
         for li in soup.select("li.result"):
@@ -118,10 +100,10 @@ class Nightcrawler:
                 overrides = engine_overrides.get(name, {}) if engine_overrides else {}
                 engine_headers = overrides.get("headers", {})
                 engine_timeout = overrides.get("timeout", 15)
-            
+
                 self.logger(f"[{name}] Sending request: {url}")
                 response = self.tor.get(url, headers=engine_headers, timeout=engine_timeout)
-                
+
                 if response.status_code != 200:
                     self.logger(f"[{name}] HTTP {response.status_code}")
                     all_results[name] = []
@@ -143,7 +125,7 @@ class Nightcrawler:
                 self.logger(f"[{name}] ERROR: {str(e)}")
                 all_results[name] = []
 
-        if self.export_json:
-            export_json(all_results)
+        if self.export_as:
+            export_data(all_results, export_as=self.export_as, class_name="Nightcrawler")
 
         return all_results
