@@ -9,5 +9,5 @@ from .core import Vigilante
 from .nightcrawler import Nightcrawler
 from .session import Session
 
-__all__ = ["Vigilante", "Nightcrawler"]
+__all__ = ["Vigilante", "Nightcrawler", "Session"]
 __version__ = "0.1.0"
