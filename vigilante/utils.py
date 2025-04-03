@@ -6,7 +6,7 @@ import stem.control
 from datetime import datetime
 from .config import ua
 
-def rotate_user_agent():
+def rotate_ua():
     """
     Returns a random user-agent string.
     If fake-useragent fails, falls back to a default UA.
