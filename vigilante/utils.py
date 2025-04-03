@@ -4,7 +4,7 @@ import json
 import stem.control
 from datetime import datetime
 
-def export_json_result(data, class_name="Result", output_dir=None):
+def export_json(data, class_name="Result", output_dir=None):
     """
     Exports JSON data to a timestamped file inside a 'results' folder in the current working directory.
     Filename format: ClassName_YYYYMMDD_HHMMSS.json
