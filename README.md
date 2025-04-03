@@ -6,8 +6,6 @@ From passive recon to active content extraction, Vigilante is your entry point i
 ---
 
 > [!NOTE]
-> **Note**
->
 > Ensure Tor is running locally. Default SOCKS proxy is usually at `127.0.0.1:9150` or `9050`.
 > You can install Tor via [Tor Browser](https://www.torproject.org/download/) or run `tor` as a background service.
 
