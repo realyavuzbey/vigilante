@@ -2,7 +2,7 @@ import requests
 import threading
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
-from .utils import export_data
+from .utils import export_data, log
 from .session import Session
 
 class Nightcrawler:
@@ -13,10 +13,10 @@ class Nightcrawler:
     Attributes:
         session (requests.Session): A Tor-enabled requests session.
         export_as (str or None): Export format - "json", "csv", "markdown", "txt" or None.
-        logger (callable): Output function (default is print).
+        logger (callable): Logging function using global log().
     """
 
-    def __init__(self, session=None, export_as=None):
+    def __init__(self, session=None, export_as=None, debug=False):
         """
         Args:
             session (requests.Session, optional): Custom Tor-enabled session.
@@ -24,10 +24,12 @@ class Nightcrawler:
             export_as (str, optional): Output format for results.
                 Supported values: "json", "csv", "markdown", "txt".
                 If None, no export will be performed.
+            debug (bool, optional): Enable debug logging.
         """
         self.session = session if session else Session().session
         self.export_as = export_as
-        self.logger = print
+        self.debug = debug
+        self.logger = lambda msg, level="INFO": log(msg, level=level, debug=self.debug)
 
     def _parse_tordex(self, html):
         """Parses HTML from Tordex and extracts structured results."""
@@ -88,7 +90,6 @@ class Nightcrawler:
                     title = a.get_text(strip=True) or "No Title"
                     domain = urlparse(onion_url).netloc or "Unknown"
 
-                    # Tor66 genelde açıklamayı link altındaki metinde verir
                     br_tag = a.find_next("br")
                     description = ""
                     if br_tag:
@@ -140,21 +141,21 @@ class Nightcrawler:
             results = []
 
             try:
-                self.logger(f"[{name}] Fetching: {base_url}")
+                self.logger(f"[{name}] Fetching: {base_url}", level="INFO")
                 response = self.session.get(base_url, timeout=15)
 
                 if response.status_code != 200:
-                    self.logger(f"[{name}] HTTP {response.status_code}")
+                    self.logger(f"[{name}] HTTP {response.status_code}", level="WARNING")
                     continue
 
                 html = response.text
                 page_results = parser(html) if parser else []
                 results.extend(page_results)
 
-                self.logger(f"[{name}] {len(results)} result(s) found.")
+                self.logger(f"[{name}] {len(results)} result(s) found.", level="INFO")
                 all_results[name] = results
             except Exception as e:
-                self.logger(f"[{name}] ERROR: {str(e)}")
+                self.logger(f"[{name}] ERROR: {str(e)}", level="ERROR")
                 all_results[name] = []
 
         if self.export_as:
