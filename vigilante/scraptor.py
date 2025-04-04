@@ -9,7 +9,7 @@ import requests
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from .utils import basedir, log
+from .utils import basedir, log, default_export_path
 from .config import DEFAULT_EXTENSION, AUTO_EXTENSIONS
 from .session import Session
 
@@ -22,29 +22,26 @@ class Scraptor:
     for accurate offline browsing.
     """
 
-    def __init__(self, downloads=None, session=None, debug=False, logger=None):
+    def __init__(self, downloads=None, session=None, export_path=None, debug=False, logger=None):
         """
         Initializes the Scraptor instance.
         
         Args:
             downloads (str): Root directory where downloaded websites will be stored.
-                If None, defaults to Desktop on Windows/Linux or Downloads on mobile devices.
+                If None, defaults to default_export_path() (typically Desktop on Windows/Linux or Downloads on mobile).
             session (requests.Session, optional): Custom or Tor-enabled session.
+            export_path (str, optional): Directory where exported JSON profiles will be saved.
+                If None, defaults to default_export_path().
             debug (bool, optional): Enable debug logging.
             logger (callable, optional): Custom logger. If not provided, uses global log().
         """
         self.visited = set()
         self.session = session or Session().session
-
-        if downloads is None:
-            if os.name == "nt" or sys.platform.startswith("linux"):
-                downloads = os.path.join(os.path.expanduser("~"), "Desktop")
-            elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
-                downloads = os.path.join(os.path.expanduser("~"), "Downloads")
-            else:
-                downloads = os.path.join(os.path.expanduser("~"), "Desktop")
-        self.downloads = downloads
+        # Use the default_export_path from utils if not provided.
+        self.downloads = downloads if downloads else default_export_path()
+        self.export_path = export_path if export_path else default_export_path()
         os.makedirs(self.downloads, exist_ok=True)
+        os.makedirs(self.export_path, exist_ok=True)
 
         self.soup = None
         self.last_url = None
@@ -354,6 +351,7 @@ class Scraptor:
                     except Exception as e:
                         self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
+        # Save the modified HTML with updated paths
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
 
