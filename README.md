@@ -10,7 +10,6 @@ From passive recon to active content extraction, Vigilante is your entry point i
 - Automatically performs searches over the Tor network without manual interaction.
 - Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
 - Allows exporting results to timestamped JSON files for later analysis or integration.
-<br>
 
 > ### **Scraptor**
 - Downloads any webpage with all static assets (HTML, CSS, JS, fonts, images).
