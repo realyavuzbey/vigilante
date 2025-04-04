@@ -9,7 +9,7 @@ import requests
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from .utils import basedir
+from .utils import basedir, log
 from .config import DEFAULT_EXTENSION, AUTO_EXTENSIONS
 from .session import Session
 from tqdm import tqdm
@@ -25,13 +25,15 @@ class Scraptor:
     for accurate offline browsing.
     """
 
-    def __init__(self, downloads, session=None):
+    def __init__(self, downloads, session=None, debug=False, logger=None):
         """
         Initializes the Scraptor instance.
         
         Args:
             downloads (str): Root directory where downloaded websites will be stored.
             session (requests.Session, optional): Custom or Tor-enabled session.
+            debug (bool, optional): Enable debug logging.
+            logger (callable, optional): Custom logger. If not provided, uses global log().
         """
         self.visited = set()
         self.session = session or Session().session
@@ -39,6 +41,8 @@ class Scraptor:
         os.makedirs(self.downloads, exist_ok=True)
         self.soup = None
         self.last_url = None
+        self.debug = debug
+        self.logger = logger or (lambda msg, level="INFO": log(msg, level=level, debug=self.debug))
 
     @classmethod
     def this(cls, url, download_source=False, downloads=None, session=None):
@@ -118,7 +122,7 @@ class Scraptor:
         try:
             response = instance.session.get(url, timeout=15)
             if response.status_code != 200:
-                print(f"[Scraptor] HTTP {response.status_code}: {url}")
+                instance.logger(f"[Scraptor] HTTP {response.status_code}: {url}", level="WARNING")
                 return []
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -142,8 +146,8 @@ class Scraptor:
                 with open(html_file, "w", encoding="utf-8") as f:
                     f.write(str(soup))
 
-                print(f"[Scraptor] Text content saved to {text_file}")
-                print(f"[Scraptor] Clean HTML saved to {html_file}")
+                instance.logger(f"[Scraptor] Text content saved to {text_file}", level="INFO")
+                instance.logger(f"[Scraptor] Clean HTML saved to {html_file}", level="INFO")
                 return {"text": text_file, "html": html_file}
 
             media_tags = {
@@ -165,6 +169,7 @@ class Scraptor:
                         if not src:
                             continue
                         if src.startswith("data:") or src.startswith("blob:"):
+                            instance.logger(f"[Scraptor] Skipped inline asset: {src[:40]}...", level="INFO")
                             continue
 
                         media_url = urljoin(url, src)
@@ -176,96 +181,16 @@ class Scraptor:
                             if media_resp.status_code == 200:
                                 with open(local_path, "wb") as f:
                                     f.write(media_resp.content)
-                                print(f"[Scraptor] Saved {mode}: {local_path}")
+                                instance.logger(f"[Scraptor] Saved {mode}: {local_path}", level="INFO")
                                 saved.append(local_path)
                         except Exception as e:
-                            print(f"[Scraptor] Failed to get {mode} {media_url}: {e}")
+                            instance.logger(f"[Scraptor] Failed to get {mode} {media_url}: {e}", level="ERROR")
 
             return saved
 
         except Exception as e:
-            print(f"[Scraptor] ERROR: get({mode}) failed - {e}")
+            instance.logger(f"[Scraptor] ERROR: get({mode}) failed - {e}", level="ERROR")
             return [] if mode != "text" else None
-        
-    @classmethod
-    def snapshot(cls, url, image=True, depth=1, output_dir="snapshots"):
-        """
-        Crawls site and analyzes all image elements, extracting pixel, size, color and metadata info.
-
-        Args:
-            url (str): Root URL to crawl.
-            image (bool): Whether to download and analyze images.
-            depth (int): How deep to crawl internal links.
-            output_dir (str): Where to store downloaded files.
-
-        Returns:
-            list: Analysis result of all images across pages.
-        """
-        import requests, os
-        from urllib.parse import urljoin, urlparse
-        from bs4 import BeautifulSoup
-        from PIL import Image
-        from io import BytesIO
-        import numpy as np
-
-        visited = set()
-        queue = [(url, 0)]
-        images_data = []
-
-        os.makedirs(output_dir, exist_ok=True)
-
-        while queue:
-            current_url, current_depth = queue.pop(0)
-            if current_url in visited or current_depth > depth:
-                continue
-            visited.add(current_url)
-
-            try:
-                resp = requests.get(current_url, timeout=10)
-                soup = BeautifulSoup(resp.text, "html.parser")
-
-                for a in soup.find_all("a", href=True):
-                    link = urljoin(current_url, a["href"])
-                    if urlparse(link).netloc == urlparse(url).netloc:
-                        queue.append((link, current_depth + 1))
-
-                for img in soup.find_all("img", src=True):
-                    img_url = urljoin(current_url, img["src"])
-                    try:
-                        img_resp = requests.get(img_url, timeout=10)
-                        img_data = BytesIO(img_resp.content)
-                        image_obj = Image.open(img_data).convert("RGB")
-                        np_img = np.array(image_obj)
-
-                        width, height = image_obj.size
-                        avg_color = tuple(np.mean(np_img.reshape(-1, 3), axis=0).astype(int))
-                        histogram = image_obj.histogram()
-                        brightness = np.mean(np_img)
-
-                        output_path = os.path.join(output_dir, os.path.basename(img["src"]))
-                        image_obj.save(output_path)
-
-                        images_data.append({
-                            "page_url": current_url,
-                            "img_url": img_url,
-                            "filename": os.path.basename(img["src"]),
-                            "resolution": f"{width}x{height}",
-                            "size_kb": round(len(img_resp.content)/1024, 2),
-                            "avg_color": avg_color,
-                            "brightness_score": round(float(brightness), 2),
-                            "histogram": histogram[:10],  # partial
-                            "saved_to": output_path
-                        })
-
-                        print(f"[Scraptor] 🖼 Analyzed: {img_url}")
-
-                    except Exception as e:
-                        print(f"[Scraptor] Failed image: {img_url} | {e}")
-
-            except Exception as e:
-                print(f"[Scraptor] Failed page: {current_url} | {e}")
-
-        return images_data
 
     def _resolve_output_path(self, output_path, default_filename="Scraptor.json", fallback_folder="results"):
         """
@@ -302,7 +227,7 @@ class Scraptor:
             try:
                 response = self.session.get(current, timeout=15)
                 if response.status_code != 200:
-                    print(f"[Scraptor] Skipped {current} (status {response.status_code})")
+                    self.logger(f"[Scraptor] Skipped {current} (status {response.status_code})", level="WARNING")
                     continue
 
                 self.last_url = current
@@ -318,7 +243,7 @@ class Scraptor:
                 queue.extend(links)
 
             except Exception as e:
-                print(f"[Scraptor] ERROR crawling {current}: {e}")
+                self.logger(f"[Scraptor] ERROR crawling {current}: {e}", level="ERROR")
 
     def _scrape_page(self, url, download_source):
         """
@@ -327,7 +252,7 @@ class Scraptor:
         try:
             response = self.session.get(url, timeout=15)
             if response.status_code != 200:
-                print(f"[Scraptor] HTTP {response.status_code}: {url}")
+                self.logger(f"[Scraptor] HTTP {response.status_code}: {url}", level="WARNING")
                 return
 
             self.last_url = url
@@ -345,7 +270,7 @@ class Scraptor:
                 self._download_assets(self.soup, url, save_path)
 
         except Exception as e:
-            print(f"[Scraptor] ERROR scraping {url}: {e}")
+            self.logger(f"[Scraptor] ERROR scraping {url}: {e}", level="ERROR")
 
     def _save_page(self, url, html, root_path):
         """
@@ -366,7 +291,7 @@ class Scraptor:
         with open(local_path, "w", encoding="utf-8") as f:
             f.write(html)
 
-        print(f"[Scraptor] Saved page: {local_path}")
+        self.logger(f"[Scraptor] Saved page: {local_path}", level="INFO")
         return local_path
 
     def _sanitize_path(self, path):
@@ -403,7 +328,7 @@ class Scraptor:
                     if not src:
                         continue
                     if src.startswith("blob:") or src.startswith("data:"):
-                        print(f"[Scraptor] Skipped inline asset: {src[:40]}...")
+                        self.logger(f"[Scraptor] Skipped inline asset: {src[:40]}...", level="INFO")
                         continue
 
                     asset_url = urljoin(base_url, src)
@@ -418,15 +343,14 @@ class Scraptor:
                         if response.status_code == 200:
                             with open(local_path, "wb") as f:
                                 f.write(response.content)
-                            print(f"[Scraptor] Downloaded asset: {local_path}")
+                            self.logger(f"[Scraptor] Downloaded asset: {local_path}", level="INFO")
                             downloaded.add(asset_url)
 
                             relative_path = os.path.relpath(local_path, start=os.path.dirname(self._save_page_path)).replace("\\", "/")
                             el[attr] = relative_path
                     except Exception as e:
-                        print(f"[Scraptor] Failed to download asset {asset_url}: {e}")
+                        self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
-        # Save the modified HTML with updated paths
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
 
@@ -512,7 +436,7 @@ class Scraptor:
             response = self.session.get(url, timeout=15)
 
             if response.status_code != 200:
-                print(f"[Scraptor] HTTP {response.status_code}: {url}")
+                self.logger(f"[Scraptor] HTTP {response.status_code}: {url}", level="WARNING")
                 return None
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -565,11 +489,11 @@ class Scraptor:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
 
-            print(f"[Scraptor] Full profile exported to {output_path}")
+            self.logger(f"[Scraptor] Full profile exported to {output_path}", level="INFO")
             return output_path
 
         except Exception as e:
-            print(f"[Scraptor] ERROR: Recon failed due to {e}")
+            self.logger(f"[Scraptor] ERROR: Recon failed due to {e}", level="ERROR")
             return None
 
 class ScraptorResultSet:
