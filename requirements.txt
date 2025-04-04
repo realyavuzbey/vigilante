@@ -10,6 +10,7 @@ fake-useragent
 python-dateutil
 opencv-python
 2captcha-python
+android-storage
 numpy
 pymediainfo
 exifread
