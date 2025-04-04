@@ -26,7 +26,6 @@ setup(
         "dnspython",
         "tldextract",
         "python-whois",
-        "fake-useragent",
         "tqdm",
         "python-dateutil",
         "urllib3",
