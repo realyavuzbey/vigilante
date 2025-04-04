@@ -21,7 +21,6 @@ def default_export_path():
     Returns:
         str: Absolute path to export directory
     """
-    # Android (non-root, user-accessible)
     if "ANDROID_ROOT" in os.environ or sys.platform == "android":
         return "/storage/emulated/0/Download"
 
