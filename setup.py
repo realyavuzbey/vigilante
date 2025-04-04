@@ -13,7 +13,6 @@ setup(
         "numpy",
         "rstr",
         "torpy",
-        "tqdm",
         "faker",
         "click",
         "pymediainfo",
