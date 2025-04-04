@@ -29,7 +29,8 @@ setup(
         "fake-useragent",
         "tqdm",
         "python-dateutil",
-        "urllib3"
+        "urllib3",
+        "2captcha-python"
     ],
     url="https://github.com/realyavuzbey/vigilante",
     author="Yavuz Bey",
