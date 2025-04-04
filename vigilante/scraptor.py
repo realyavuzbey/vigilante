@@ -13,8 +13,6 @@ from .utils import basedir, log
 from .config import DEFAULT_EXTENSION, AUTO_EXTENSIONS
 from .session import Session
 
-downloads = basedir("downloads/websites")
-
 class Scraptor:
     """
     Scraptor is a site-mirroring utility for extracting and downloading 
@@ -24,20 +22,30 @@ class Scraptor:
     for accurate offline browsing.
     """
 
-    def __init__(self, downloads, session=None, debug=False, logger=None):
+    def __init__(self, downloads=None, session=None, debug=False, logger=None):
         """
         Initializes the Scraptor instance.
         
         Args:
             downloads (str): Root directory where downloaded websites will be stored.
+                If None, defaults to Desktop on Windows/Linux or Downloads on mobile devices.
             session (requests.Session, optional): Custom or Tor-enabled session.
             debug (bool, optional): Enable debug logging.
             logger (callable, optional): Custom logger. If not provided, uses global log().
         """
         self.visited = set()
         self.session = session or Session().session
+
+        if downloads is None:
+            if os.name == "nt" or sys.platform.startswith("linux"):
+                downloads = os.path.join(os.path.expanduser("~"), "Desktop")
+            elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
+                downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+            else:
+                downloads = os.path.join(os.path.expanduser("~"), "Desktop")
         self.downloads = downloads
         os.makedirs(self.downloads, exist_ok=True)
+
         self.soup = None
         self.last_url = None
         self.debug = debug
@@ -52,7 +60,7 @@ class Scraptor:
             url (str): The URL to scrape.
             download_source (bool): Whether to download assets (CSS, images, etc.).
         """
-        instance = cls(downloads or basedir("downloads/websites"), session=session)
+        instance = cls(downloads=downloads, session=session)
         normalized_url = instance._normalize_url(url)
         instance._scrape_page(normalized_url, download_source=download_source)
         return instance
@@ -66,7 +74,7 @@ class Scraptor:
             url (str): The root URL to start crawling.
             download_source (bool): Whether to download assets (CSS, images, etc.).
         """
-        instance = cls(downloads or basedir("downloads/websites"), session=session or requests.Session())
+        instance = cls(downloads=downloads, session=session or requests.Session())
         normalized_url = instance._normalize_url(url)
         instance._crawl_all(normalized_url, download_source=download_source)
         return instance
@@ -83,7 +91,7 @@ class Scraptor:
     
     @classmethod
     def extract(cls, url, output_path="Scraptor.json", session=None):
-        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        instance = cls(downloads=None, session=session)
         return instance.extract_page(url, output_path)
     
     def find(self, selector):
@@ -111,11 +119,11 @@ class Scraptor:
             session (requests.Session): Optional session override.
 
         Returns:
-            list or str: List of file paths (for media), or text file path (for text).
+            list or dict: List of file paths (for media) or dict of text/html file paths (for text).
         """
         assert mode in ("video", "image", "text"), "Mode must be 'video', 'image', or 'text'"
 
-        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        instance = cls(downloads=None, session=session)
         url = instance._normalize_url(url)
 
         try:
@@ -196,16 +204,12 @@ class Scraptor:
         Handles logic for default output path resolution.
         """
         if not output_path or output_path.strip() == "":
-            output_path = os.path.join(basedir(fallback_folder), default_filename)
-
-        if not os.path.dirname(output_path):
-            output_path = os.path.join(os.getcwd(), output_path)
+            output_path = os.path.join(os.getcwd(), default_filename)
 
         if os.path.isdir(output_path) or output_path.endswith(("/", "\\")):
             output_path = os.path.join(output_path, default_filename)
 
         return output_path
-
 
     def _crawl_all(self, url, download_source):
         """
@@ -350,7 +354,6 @@ class Scraptor:
                     except Exception as e:
                         self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
-        # Save the modified HTML with updated paths
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
 
@@ -369,7 +372,7 @@ class Scraptor:
     
     @classmethod
     def inspect(cls, url, session=None):
-        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        instance = cls(downloads=None, session=session)
         url = instance._normalize_url(url)
 
         try:
