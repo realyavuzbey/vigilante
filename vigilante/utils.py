@@ -5,6 +5,7 @@ import json
 import random
 import stem.control
 from datetime import datetime
+from urllib.parse import urlparse
 from .config import BLACKLISTED_UAS, FAKE_UAS
 
 def basedir(name="results"):
