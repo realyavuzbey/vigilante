@@ -7,6 +7,21 @@ import stem.control
 from datetime import datetime
 from .config import BLACKLISTED_UAS, FAKE_UAS
 
+def basedir(name="results"):
+    """
+    Returns the absolute path of a base directory under the current working directory.
+    Creates the directory if it does not exist.
+
+    Args:
+        name (str): Folder name (e.g., 'downloads', 'results', 'logs').
+
+    Returns:
+        str: Absolute path to the created/verified base directory.
+    """
+    base_dir = os.path.join(os.getcwd(), name)
+    os.makedirs(base_dir, exist_ok=True)
+    return base_dir
+
 def rotate_ua():
     """
     Returns a random user-agent from FAKE_UAS, avoiding blacklisted ones.
