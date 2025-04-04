@@ -12,6 +12,12 @@ From passive recon to active content extraction, Vigilante is your entry point i
 - Allows exporting results to timestamped JSON files for later analysis or integration.
 <br>
 
+> ### **Scraptor**
+- Downloads any webpage with all static assets (HTML, CSS, JS, fonts, images).
+- `Scraptor.this(url)` downloads a single page.
+- `Scraptor.all(url)` recursively crawls the site and downloads all internal pages.
+- Saves content under `downloads/websites/{domain}` while preserving folder structure.
+
 > [!NOTE]
 > Ensure Tor is running locally. Default SOCKS proxy is usually at `127.0.0.1:9150` or `9050`.
 > You can install Tor via [Tor Browser](https://www.torproject.org/download/) or run `tor` as a background service.
