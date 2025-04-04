@@ -11,7 +11,7 @@ class Nightcrawler:
     supports multiple engines and exports results in various formats.
 
     Attributes:
-        tor (requests.Session): A Tor-enabled requests session.
+        session (requests.Session): A Tor-enabled requests session.
         export_as (str or None): Export format - "json", "csv", "markdown", "txt" or None.
         logger (callable): Output function (default is print).
     """
@@ -25,7 +25,7 @@ class Nightcrawler:
                 Supported values: "json", "csv", "markdown", "txt".
                 If None, no export will be performed.
         """
-        self.tor = session if session else Session().session
+        self.session = session if session else Session().session
         self.export_as = export_as
         self.logger = print
 
@@ -141,7 +141,7 @@ class Nightcrawler:
 
             try:
                 self.logger(f"[{name}] Fetching: {base_url}")
-                response = self.tor.get(base_url, timeout=15)
+                response = self.session.get(base_url, timeout=15)
 
                 if response.status_code != 200:
                     self.logger(f"[{name}] HTTP {response.status_code}")
