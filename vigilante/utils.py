@@ -4,12 +4,10 @@ import time
 import stem
 import json
 import random
-from PIL import Image
 import stem.control
 from datetime import datetime
 from urllib.parse import urlparse
 from .config import BLACKLISTED_UAS, FAKE_UAS
-from pymediainfo import MediaInfo
 
 def basedir(name="results"):
     """
