@@ -5,7 +5,6 @@ aiofiles
 beautifulsoup4
 stem
 lxml
-tqdm
 colorama
 fake-useragent
 python-dateutil
