@@ -1,12 +1,18 @@
 import os
 import csv
+import time
+import docx
 import stem
 import json
+import PyPDF2
 import random
+import exifread
+from PIL import Image
 import stem.control
 from datetime import datetime
 from urllib.parse import urlparse
 from .config import BLACKLISTED_UAS, FAKE_UAS
+from pymediainfo import MediaInfo
 
 def basedir(name="results"):
     """
@@ -34,6 +40,32 @@ def rotate_ua():
 
 def _fallback_ua():
     return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    
+def log(message, level="INFO", debug=False, log_file="vigilante.log"):
+    """
+    Global logging utility for all modules.
+    
+    Args:
+        message (str): Message to log.
+        level (str): Log level (e.g., INFO, ERROR).
+        debug (bool): If True, prints to stdout.
+        log_file (str): File to append logs to.
+    """
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    log_line = f"[{level}] {timestamp} - {message}"
+
+    if debug:
+        print(log_line)
+
+    try:
+        logs_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        full_path = os.path.join(logs_dir, log_file)
+        with open(full_path, "a", encoding="utf-8") as f:
+            f.write(log_line + "\n")
+    except Exception as e:
+        if debug:
+            print(f"[LoggerError] Failed to write log: {e}")
     
 def export_data(data, export_as="json", class_name="Result", output_dir=None):
     """
@@ -100,3 +132,110 @@ def rotate_ip():
             return True
     except Exception as e:
         return {"error": str(e)}
+
+
+def parse_exif(path):
+    """
+    Extract EXIF metadata from an image file using exifread.
+    
+    Args:
+        path (str): The image file path.
+        
+    Returns:
+        dict: Extracted EXIF metadata.
+    """
+    metadata = {}
+    try:
+        with open(path, 'rb') as f:
+            tags = exifread.process_file(f, details=False)
+            for tag in tags:
+                metadata[tag] = str(tags[tag])
+    except Exception as e:
+        metadata["error"] = str(e)
+    return metadata
+
+
+def parse_pdf(path):
+    """
+    Extract metadata from a PDF file using PyPDF2.
+    
+    Args:
+        path (str): The PDF file path.
+        
+    Returns:
+        dict: Extracted PDF metadata.
+    """
+    metadata = {}
+    try:
+        with open(path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            info = reader.metadata
+            if info:
+                for key, value in info.items():
+                    metadata[key] = str(value)
+    except Exception as e:
+        metadata["error"] = str(e)
+    return metadata
+
+
+def parse_docx(path):
+    """
+    Extract metadata from a DOCX file using python-docx.
+    
+    Args:
+        path (str): The DOCX file path.
+        
+    Returns:
+        dict: Extracted DOCX metadata.
+    """
+    metadata = {}
+    try:
+        doc = docx.Document(path)
+        core_properties = doc.core_properties
+        metadata["author"] = core_properties.author
+        metadata["title"] = core_properties.title
+        metadata["subject"] = core_properties.subject
+        metadata["created"] = str(core_properties.created)
+        metadata["modified"] = str(core_properties.modified)
+    except Exception as e:
+        metadata["error"] = str(e)
+    return metadata
+
+
+def parse_media(path):
+    """
+    Extract metadata from a media (video) file using pymediainfo if available.
+    
+    Args:
+        path (str): The media file path.
+        
+    Returns:
+        dict: Extracted media metadata.
+    """
+    metadata = {}
+    if MediaInfo is None:
+        metadata["warning"] = "pymediainfo is not installed."
+        return metadata
+    try:
+        media_info = MediaInfo.parse(path)
+        for track in media_info.tracks:
+            if track.track_type == "General":
+                metadata.update({
+                    "duration": track.duration,
+                    "file_size": track.file_size,
+                    "format": track.format,
+                    "title": track.title,
+                    "album": track.album,
+                    "performer": track.performer,
+                })
+            elif track.track_type == "Video":
+                metadata.update({
+                    "width": track.width,
+                    "height": track.height,
+                    "frame_rate": track.frame_rate,
+                    "bit_rate": track.bit_rate,
+                    "codec": track.codec,
+                })
+    except Exception as e:
+        metadata["error"] = str(e)
+    return metadata
