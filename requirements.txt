@@ -8,7 +8,6 @@ lxml
 colorama
 fake-useragent
 python-dateutil
-opencv-python
 2captcha-python
 plyer
 numpy
