@@ -9,7 +9,6 @@ setup(
         "beautifulsoup4",
         "stem",
         "lxml",
-        "opencv-python",
         "numpy",
         "plyer",
         "rstr",
