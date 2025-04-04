@@ -36,6 +36,7 @@ class Nightcrawler:
         self.debug = debug
         self.logger = lambda msg, level="INFO": log(msg, level=level, debug=self.debug)
 
+        # Set export path based on platform if not provided
         if export_path is None:
             if sys.platform.startswith("win") or sys.platform.startswith("linux"):
                 self.export_path = os.path.join(os.path.expanduser("~"), "Desktop")
