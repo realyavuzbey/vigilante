@@ -16,7 +16,6 @@ setup(
         "tqdm",
         "faker",
         "click",
-        "docx",
         "pymediainfo",
         "exifread",
         "pillow",
