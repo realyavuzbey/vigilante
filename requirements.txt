@@ -12,7 +12,6 @@ python-dateutil
 opencv-python
 2captcha-python
 numpy
-docx
 pymediainfo
 exifread
 click
