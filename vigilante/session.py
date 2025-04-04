@@ -1,6 +1,6 @@
 import requests
 from .config import CONFIG
-from .utils import rotate_ua, rotate_ip
+from .utils import rotate_ua, rotate_ip, is_mobile
 
 class Session:
     """
