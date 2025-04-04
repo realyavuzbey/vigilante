@@ -11,7 +11,7 @@ setup(
         "lxml",
         "opencv-python",
         "numpy",
-        "android-storage",
+        "androidstorage",
         "rstr",
         "torpy",
         "faker",
