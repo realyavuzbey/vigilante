@@ -7,8 +7,9 @@ import threading
 
 from .config import CONFIG, ua
 from .nightcrawler import Nightcrawler
-from .utils import rotate_ip, export_data, rotate_ua
+from .utils import rotate_ip, export_data, rotate_ua, basedir
 from .session import Session
+from .scraptor import Scraptor
 
 class Vigilante:
     """
@@ -23,7 +24,7 @@ class Vigilante:
         tor_enabled (bool): Indicates if Tor is enabled.
         proxy (dict): Proxy configuration for Tor connections.
         ip_type (str): Type of IP to use ('dynamic' or 'static').
-        tor_session (requests.Session): A session configured with Tor proxies.
+        session (requests.Session): A session configured with Tor proxies.
         nightcrawler (Nightcrawler): Instance for crawling dark web search engines.
         ip_info (dict): Information about the current IP environment.
         
@@ -50,15 +51,16 @@ class Vigilante:
 
         # Initialize session wrapper and obtain default Tor session
         self.session_wrapper = Session()
-        self.tor_session = self.session_wrapper.session
+        self.session = self.session_wrapper.session
 
         # Set up the proxy based on the platform (mobile or desktop)
         self.proxy = self._set_proxy()
-        self.tor_session.proxies.update(self.proxy)
-        self.tor_session.headers.update(self.headers)
+        self.session.proxies.update(self.proxy)
+        self.session.headers.update(self.headers)
 
         # Initialize Nightcrawler with the Tor session
-        self.nightcrawler = Nightcrawler(tor_session=self.tor_session, export_as=self.export_as)
+        self.nightcrawler = Nightcrawler(session=self.session, export_as=self.export_as)
+        self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session)
 
         # Set IP type based on security level
         self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
