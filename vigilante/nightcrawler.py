@@ -36,7 +36,6 @@ class Nightcrawler:
         self.debug = debug
         self.logger = lambda msg, level="INFO": log(msg, level=level, debug=self.debug)
 
-        # Set export path based on platform if not provided
         if export_path is None:
             if sys.platform.startswith("win") or sys.platform.startswith("linux"):
                 self.export_path = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -95,7 +94,6 @@ class Nightcrawler:
             title = title_tag.get_text(strip=True) if title_tag else "No Title"
             a_tag = title_tag.find("a") if title_tag else None
             raw_href = a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
-            # Build full URL if necessary
             full_url = f"https://ahmia.fi{raw_href}" if raw_href.startswith("/") else raw_href
             description = desc_tag.get_text(strip=True) if desc_tag else "No Description"
             domain = cite_tag.get_text(strip=True) if cite_tag else "Unknown"
