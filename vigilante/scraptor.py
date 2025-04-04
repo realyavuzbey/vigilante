@@ -2,6 +2,8 @@ import os
 import re
 import time
 import json
+import socket
+import hashlib
 import requests
 
 from datetime import datetime
@@ -33,6 +35,7 @@ class Scraptor:
         """
         self.visited = set()
         self.session = session or Session().session
+        self.debug = debug
         self.downloads = downloads
         os.makedirs(self.downloads, exist_ok=True)
         self.soup = None
@@ -76,6 +79,11 @@ class Scraptor:
             return "http://" + url
         return url
     
+    @classmethod
+    def extract(cls, url, output_path="Scraptor.json", session=None):
+        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        return instance.extract_page(url, output_path)
+    
     def find(self, selector):
         """
         Perform a CSS-style selector query on the last loaded page.
@@ -89,6 +97,96 @@ class Scraptor:
         if not self.soup:
             raise ValueError("No page loaded. Use `this()` or `all()` first.")
         return ScraptorResultSet(self.soup.select(selector))
+    
+    @classmethod
+    def get(cls, url, mode="video", session=None):
+        """
+        Downloads specific content type from a page: video, image or text.
+
+        Args:
+            url (str): Target URL.
+            mode (str): 'video', 'image', or 'text'.
+            session (requests.Session): Optional session override.
+
+        Returns:
+            list or str: List of file paths (for media), or text file path (for text).
+        """
+        assert mode in ("video", "image", "text"), "Mode must be 'video', 'image', or 'text'"
+
+        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        url = instance._normalize_url(url)
+
+        try:
+            response = instance.session.get(url, timeout=15)
+            if response.status_code != 200:
+                print(f"[Scraptor] HTTP {response.status_code}: {url}")
+                return []
+
+            soup = BeautifulSoup(response.text, "html.parser")
+            parsed = urlparse(url)
+            hostname = parsed.hostname.replace(".", "_")
+            target_dir = os.path.join(instance.downloads, hostname, mode + "s")
+            os.makedirs(target_dir, exist_ok=True)
+
+            if mode == "text":
+                for tag in soup(["form", "input", "iframe", "textarea", "script", "style"]):
+                    tag.decompose()
+
+                text = soup.get_text(separator=" ", strip=True)
+
+                text_file = os.path.join(target_dir, "page.txt")
+                html_file = os.path.join(target_dir, "page.html")
+
+                with open(text_file, "w", encoding="utf-8") as f:
+                    f.write(text)
+
+                with open(html_file, "w", encoding="utf-8") as f:
+                    f.write(str(soup))
+
+                print(f"[Scraptor] Text content saved to {text_file}")
+                print(f"[Scraptor] Clean HTML saved to {html_file}")
+                return {"text": text_file, "html": html_file}
+
+            media_tags = {
+                "video": ["video", "source"],
+                "image": ["img"]
+            }
+
+            media_attrs = {
+                "video": ["src", "poster"],
+                "image": ["src"]
+            }
+
+            saved = []
+
+            for tag in media_tags[mode]:
+                for el in soup.find_all(tag):
+                    for attr in media_attrs[mode]:
+                        src = el.get(attr)
+                        if not src:
+                            continue
+                        if src.startswith("data:") or src.startswith("blob:"):
+                            continue
+
+                        media_url = urljoin(url, src)
+                        filename = os.path.basename(urlparse(media_url).path)
+                        local_path = os.path.join(target_dir, filename)
+
+                        try:
+                            media_resp = instance.session.get(media_url, timeout=10)
+                            if media_resp.status_code == 200:
+                                with open(local_path, "wb") as f:
+                                    f.write(media_resp.content)
+                                print(f"[Scraptor] Saved {mode}: {local_path}")
+                                saved.append(local_path)
+                        except Exception as e:
+                            print(f"[Scraptor] Failed to get {mode} {media_url}: {e}")
+
+            return saved
+
+        except Exception as e:
+            print(f"[Scraptor] ERROR: get({mode}) failed - {e}")
+            return [] if mode != "text" else None
 
     def _crawl_all(self, url, download_source):
         """
@@ -249,25 +347,114 @@ class Scraptor:
             if urlparse(absolute).netloc == base_domain:
                 links.append(absolute)
         return links
-
-    def extract(self, url, output_dir="results"):
+    
+    def extract_page(self, url, output_path="Scraptor.json", debug=False):
         """
-        Crawls the site and exports structured HTML data from each page to a single JSON.
+        Extracts all available metadata, headers, and forensic info from a single HTML page
+        and saves it in a JSON file.
 
         Args:
-            url (str): Root URL to start crawling.
-            output_dir (str): Folder to save JSON output.
+            url (str): The target URL to analyze.
+            output_path (str): Where to save the resulting data.
+            debug (bool): If True, prints verbose output.
 
         Returns:
             str: Path to the saved JSON file.
         """
-        self.visited = set()
-        result = {}
+        def check_allowed_methods(url, session):
+            try:
+                r = session.options(url, timeout=10)
+                return r.headers.get("Allow")
+            except:
+                return None
 
-        def scrape_data_from_soup(soup, current_url):
-            return {
-                "url": current_url,
+        def analyze_cookies(headers):
+            results = []
+            cookies = headers.get("Set-Cookie", "")
+            if "PHPSESSID" in cookies:
+                results.append("PHP session detected")
+            if "laravel_session" in cookies:
+                results.append("Laravel backend")
+            if "JSESSIONID" in cookies:
+                results.append("Java backend (Tomcat or Spring)")
+            if "Secure" not in cookies:
+                results.append("Cookie NOT marked Secure")
+            if "HttpOnly" not in cookies:
+                results.append("Cookie NOT marked HttpOnly")
+            return results
+
+        def basic_header_analysis(headers):
+            flags = []
+            if "X-Powered-By" in headers:
+                flags.append(f"Reveals tech stack: {headers['X-Powered-By']}")
+            if "Server" in headers and "Apache" in headers["Server"]:
+                flags.append("Apache detected")
+            if "Strict-Transport-Security" not in headers:
+                flags.append("Missing HSTS (vulnerable to downgrade attack)")
+            return flags
+
+        url = self._normalize_url(url)
+
+        if os.path.isdir(output_path) or output_path.endswith(("/", "\\")):
+            output_path = os.path.join(output_path, "Scraptor.json")
+
+        try:
+            if debug:
+                print("[Scraptor] Surveillance mode: ACTIVE. Establishing connection...")
+
+            response = None
+            if debug:
+                for _ in tqdm(range(1), desc="Connecting", unit="req"):
+                    response = self.session.get(url, timeout=15)
+            else:
+                response = self.session.get(url, timeout=15)
+
+            if response.status_code != 200:
+                print(f"[Scraptor] HTTP {response.status_code}: {url}")
+                return None
+
+            soup = BeautifulSoup(response.text, "html.parser")
+            parsed = urlparse(url)
+
+            ip_address = None
+            if not parsed.hostname.endswith(".onion"):
+                try:
+                    ip_address = socket.gethostbyname(parsed.hostname)
+                except:
+                    ip_address = None
+
+            favicon_hash = None
+            try:
+                fav_url = urljoin(url, "/favicon.ico")
+                fav_resp = self.session.get(fav_url, timeout=10)
+                if fav_resp.status_code == 200:
+                    favicon_hash = hashlib.md5(fav_resp.content).hexdigest()
+            except:
+                pass
+
+            founding_year = None
+            copyright_tags = soup.find_all(string=re.compile(r"©|copyright|\d{4}"))
+            years = re.findall(r"\b(19|20)\d{2}\b", " ".join(copyright_tags))
+            if years:
+                founding_year = min(set(years))
+
+            headers = dict(response.headers)
+            analysis = {
+                "ip": ip_address,
+                "favicon_hash": favicon_hash,
+                "founded_guess": founding_year,
+                "allowed_methods": check_allowed_methods(url, self.session),
+                "cookie_analysis": analyze_cookies(headers),
+                "header_flags": basic_header_analysis(headers)
+            }
+
+            if debug:
+                print("[Scraptor] Target dissected. Compiling intelligence...")
+
+            data = {
+                "url": url,
                 "title": soup.title.string if soup.title else None,
+                "headers": headers,
                 "meta": [
                     {tag.get("name") or tag.get("property"): tag.get("content")}
                     for tag in soup.find_all("meta") if tag.get("content")
@@ -277,42 +464,20 @@ class Scraptor:
                 "scripts": [s.get("src") for s in soup.find_all("script", src=True)],
                 "stylesheets": [l.get("href") for l in soup.find_all("link", rel="stylesheet")],
                 "forms": [f.get("action") for f in soup.find_all("form") if f.get("action")],
-                "text": soup.get_text(separator=" ", strip=True)[:500]  # First 500 chars
+                "text_snippet": soup.get_text(separator=" ", strip=True)[:1000],
+                "analysis": analysis
             }
 
-        queue = [self._normalize_url(url)]
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
 
-        while queue:
-            current = queue.pop(0)
-            if current in self.visited:
-                continue
-            self.visited.add(current)
+            print(f"[Scraptor] Full profile exported to {output_path}")
+            return output_path
 
-            try:
-                response = self.session.get(current, timeout=15)
-                if response.status_code != 200:
-                    continue
-
-                soup = BeautifulSoup(response.text, "html.parser")
-                result[current] = scrape_data_from_soup(soup, current)
-
-                for a in soup.find_all("a", href=True):
-                    href = urljoin(current, a["href"])
-                    if urlparse(href).netloc == urlparse(url).netloc and href not in self.visited:
-                        queue.append(href)
-
-            except Exception as e:
-                result[current] = {"error": str(e)}
-
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        outpath = os.path.join(output_dir, f"Scraptor_{timestamp}.json")
-
-        with open(outpath, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
-
-        print(f"[Scraptor] Exported structured data to {outpath}")
-        return outpath
+        except Exception as e:
+            print(f"[Scraptor] ERROR: Recon failed due to {e}")
+            return None
 
 class ScraptorResultSet:
     """
