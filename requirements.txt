@@ -7,11 +7,17 @@ stem
 lxml
 tqdm
 colorama
+fake-useragent
 python-dateutil
 opencv-python
+2captcha-python
 numpy
+docx
+pymediainfo
+exifread
 click
 pillow
+python-docx
 yt-dlp
 urllib3
 pycountry
