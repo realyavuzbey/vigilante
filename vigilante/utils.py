@@ -1,5 +1,6 @@
 import os
 import csv
+import sys
 import time
 import stem
 import json
@@ -62,17 +63,35 @@ def log(message, level="INFO", debug=False, log_file="vigilante.log"):
         if debug:
             print(f"[LoggerError] Failed to write log: {e}")
     
-def export_data(data, export_as="json", class_name="Result", output_dir=None):
+def export_data(data, export_as="json", class_name="Result", export_path=None):
     """
     Exports data in json, csv, txt, or markdown format.
-    """
-    if output_dir is None:
-        output_dir = os.path.join(os.getcwd(), "results")
-    os.makedirs(output_dir, exist_ok=True)
 
+    Args:
+        data (dict): The data to be exported.
+        export_as (str): Format of export ("json", "csv", "txt", "markdown").
+        class_name (str): Used in filename to identify exporter.
+        export_path (str): Target directory for saving the file.
+            If None, defaults to Desktop or Downloads based on platform.
+    
+    Returns:
+        str: Full file path of the exported file, or error string on failure.
+    """
+    # Determine default export path based on OS
+    if export_path is None:
+        if sys.platform.startswith("win") or sys.platform.startswith("linux"):
+            export_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
+            export_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        else:
+            export_path = os.path.join(os.path.expanduser("~"), "Desktop")
+
+    os.makedirs(export_path, exist_ok=True)
+
+    # Generate filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{class_name}_{timestamp}.{export_as}"
-    filepath = os.path.join(output_dir, filename)
+    filepath = os.path.join(export_path, filename)
 
     try:
         if export_as == "json":
