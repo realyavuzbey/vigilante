@@ -1,12 +1,16 @@
 import os
 import re
 import time
+import json
 import requests
+
+from datetime import datetime
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from .utils import basedir
 from .config import DEFAULT_EXTENSION, AUTO_EXTENSIONS
 from .session import Session
+from tqdm import tqdm
 
 downloads = basedir("downloads/websites")
 
@@ -19,7 +23,7 @@ class Scraptor:
     for accurate offline browsing.
     """
 
-    def __init__(self, downloads, session=None):
+    def __init__(self, downloads, session=None, debug=False):
         """
         Initializes the Scraptor instance.
         
@@ -61,16 +65,17 @@ class Scraptor:
         normalized_url = instance._normalize_url(url)
         instance._crawl_all(normalized_url, download_source=download_source)
         return instance
-
-    def _normalize_url(self, url):
+    
+    @staticmethod
+    def _normalize_url(url):
         """
-        Ensures the URL has a scheme (http or https).
+        Ensures the URL has a proper scheme. Defaults to http:// if missing.
         """
         parsed = urlparse(url)
         if not parsed.scheme:
             return "http://" + url
         return url
-
+    
     def find(self, selector):
         """
         Perform a CSS-style selector query on the last loaded page.
@@ -245,6 +250,69 @@ class Scraptor:
                 links.append(absolute)
         return links
 
+    def extract(self, url, output_dir="results"):
+        """
+        Crawls the site and exports structured HTML data from each page to a single JSON.
+
+        Args:
+            url (str): Root URL to start crawling.
+            output_dir (str): Folder to save JSON output.
+
+        Returns:
+            str: Path to the saved JSON file.
+        """
+        self.visited = set()
+        result = {}
+
+        def scrape_data_from_soup(soup, current_url):
+            return {
+                "url": current_url,
+                "title": soup.title.string if soup.title else None,
+                "meta": [
+                    {tag.get("name") or tag.get("property"): tag.get("content")}
+                    for tag in soup.find_all("meta") if tag.get("content")
+                ],
+                "links": [a.get("href") for a in soup.find_all("a", href=True)],
+                "images": [img.get("src") for img in soup.find_all("img", src=True)],
+                "scripts": [s.get("src") for s in soup.find_all("script", src=True)],
+                "stylesheets": [l.get("href") for l in soup.find_all("link", rel="stylesheet")],
+                "forms": [f.get("action") for f in soup.find_all("form") if f.get("action")],
+                "text": soup.get_text(separator=" ", strip=True)[:500]  # First 500 chars
+            }
+
+        queue = [self._normalize_url(url)]
+
+        while queue:
+            current = queue.pop(0)
+            if current in self.visited:
+                continue
+            self.visited.add(current)
+
+            try:
+                response = self.session.get(current, timeout=15)
+                if response.status_code != 200:
+                    continue
+
+                soup = BeautifulSoup(response.text, "html.parser")
+                result[current] = scrape_data_from_soup(soup, current)
+
+                for a in soup.find_all("a", href=True):
+                    href = urljoin(current, a["href"])
+                    if urlparse(href).netloc == urlparse(url).netloc and href not in self.visited:
+                        queue.append(href)
+
+            except Exception as e:
+                result[current] = {"error": str(e)}
+
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        outpath = os.path.join(output_dir, f"Scraptor_{timestamp}.json")
+
+        with open(outpath, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=4, ensure_ascii=False)
+
+        print(f"[Scraptor] Exported structured data to {outpath}")
+        return outpath
 
 class ScraptorResultSet:
     """
@@ -265,3 +333,26 @@ class ScraptorResultSet:
         Returns the first matched element, or None.
         """
         return self.elements[0] if self.elements else None
+    
+    def extract(self, attrs=None):
+        """
+        Extracts useful info from all elements.
+
+        Args:
+            attrs (list or str, optional): Specific attribute(s) to extract. 
+                If None, returns text content. If list, pulls all specified attrs.
+
+        Returns:
+            list: Extracted text or attribute values from elements.
+        """
+        results = []
+
+        for el in self.elements:
+            if attrs is None:
+                results.append(el.get_text(strip=True))
+            elif isinstance(attrs, str):
+                results.append(el.get(attrs, None))
+            elif isinstance(attrs, list):
+                results.append({attr: el.get(attr, None) for attr in attrs})
+
+        return results
