@@ -33,16 +33,18 @@ class Vigilante:
         crawl(term): Returns structured search results from Ahmia, Tordex and more data.
     """
 
-    def __init__(self, security="1", export_as=None):
+    def __init__(self, security="1", export_as=None, debug=False):
         """
         Initialize the Vigilante instance with security settings and a Tor session.
 
         Args:
             security (str, optional): The security level. Defaults to "1".
             export_as (str, optional): Export format. One of "json", "csv", "markdown", or "txt". Defaults to None.
+            debug (bool, optional): Just a simple debug.
         """
         self.security = str(security)
         self.export_as = export_as
+        self.debug = debug
 
         # Load configuration from CONFIG
         self.headers = CONFIG["HEADERS"]
@@ -60,7 +62,7 @@ class Vigilante:
 
         # Initialize Nightcrawler with the Tor session
         self.nightcrawler = Nightcrawler(session=self.session, export_as=self.export_as)
-        self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session)
+        self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session, debug=self.debug)
 
         # Set IP type based on security level
         self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
