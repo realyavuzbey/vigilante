@@ -16,16 +16,16 @@ class Nightcrawler:
         logger (callable): Output function (default is print).
     """
 
-    def __init__(self, tor_session=None, export_as=None):
+    def __init__(self, session=None, export_as=None):
         """
         Args:
-            tor_session (requests.Session, optional): Custom Tor-enabled session.
+            session (requests.Session, optional): Custom Tor-enabled session.
                 If not provided, a default Tor session will be used.
             export_as (str, optional): Output format for results.
                 Supported values: "json", "csv", "markdown", "txt".
                 If None, no export will be performed.
         """
-        self.tor = tor_session if tor_session else Session().session
+        self.tor = session if session else Session().session
         self.export_as = export_as
         self.logger = print
 
@@ -88,6 +88,7 @@ class Nightcrawler:
                     title = a.get_text(strip=True) or "No Title"
                     domain = urlparse(onion_url).netloc or "Unknown"
 
+                    # Tor66 genelde açıklamayı link altındaki metinde verir
                     br_tag = a.find_next("br")
                     description = ""
                     if br_tag:
