@@ -10,6 +10,20 @@ from datetime import datetime
 from urllib.parse import urlparse
 from .config import BLACKLISTED_UAS, FAKE_UAS
 
+def default_export_path():
+    """
+    Determines the default export path based on the user's platform.
+
+    Returns:
+        str: A path string to Desktop (on Windows/Linux) or Downloads (on mobile).
+    """
+    if sys.platform.startswith("win") or sys.platform.startswith("linux"):
+        return os.path.join(os.path.expanduser("~"), "Desktop")
+    elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
+        return os.path.join(os.path.expanduser("~"), "Downloads")
+    else:
+        return os.path.join(os.path.expanduser("~"), "Desktop")
+        
 def basedir(name="results"):
     """
     Returns the absolute path of a base directory under the current working directory.
