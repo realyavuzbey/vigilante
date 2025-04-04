@@ -22,6 +22,9 @@ VIDEO_EXTENSIONS = (
     ".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm", ".3gp", ".m4v"
 )
 
+DEFAULT_EXTENSION = ".html"
+AUTO_EXTENSIONS = [".html", ".htm", ".css", ".js", ".png", ".webp", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf"]
+
 FAKE_UAS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15",
