@@ -351,6 +351,7 @@ class Scraptor:
                     except Exception as e:
                         self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
+        # Save the modified HTML with updated paths
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
 
