@@ -7,6 +7,7 @@ https://vigilante.top
 
 from .core import Vigilante
 from .nightcrawler import Nightcrawler
+from .scraptor import Scraptor
 from .session import Session
 
 __all__ = ["Vigilante", "Nightcrawler", "Session"]
