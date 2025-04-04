@@ -34,7 +34,20 @@ def default_export_path():
         return desktop
 
     return os.getcwd()
-        
+
+def is_mobile():
+    """
+    Detects if the system is a mobile platform (Android or iOS).
+
+    Returns:
+        bool: True if Android or iOS, False otherwise.
+    """
+    return (
+        "ANDROID_ROOT" in os.environ or 
+        sys.platform == "android" or 
+        sys.platform == "ios"
+    )
+
 def basedir(name="results"):
     """
     Returns the absolute path of a base directory under the current working directory.
