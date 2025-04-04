@@ -25,7 +25,7 @@ class Scraptor:
     for accurate offline browsing.
     """
 
-    def __init__(self, downloads, session=None, debug=False):
+    def __init__(self, downloads, session=None):
         """
         Initializes the Scraptor instance.
         
@@ -35,7 +35,6 @@ class Scraptor:
         """
         self.visited = set()
         self.session = session or Session().session
-        self.debug = debug
         self.downloads = downloads
         os.makedirs(self.downloads, exist_ok=True)
         self.soup = None
@@ -444,7 +443,24 @@ class Scraptor:
                 links.append(absolute)
         return links
     
-    def extract_page(self, url, output_path="", debug=False):
+    @classmethod
+    def inspect(cls, url, session=None):
+        instance = cls(downloads=basedir("downloads/websites"), session=session)
+        url = instance._normalize_url(url)
+
+        try:
+            r = instance.session.get(url, timeout=10)
+            return {
+                "url": url,
+                "status_code": r.status_code,
+                "headers": dict(r.headers),
+                "content_type": r.headers.get("Content-Type"),
+                "size_kb": round(len(r.content) / 1024, 2)
+            }
+        except Exception as e:
+            return {"error": str(e)}
+    
+    def extract_page(self, url, output_path=""):
         """
         Extracts all available metadata, headers, and forensic info from a single HTML page
         and saves it in a JSON file.
@@ -452,7 +468,6 @@ class Scraptor:
         Args:
             url (str): The target URL to analyze.
             output_path (str): Where to save the resulting data.
-            debug (bool): If True, prints verbose output.
 
         Returns:
             str: Path to the saved JSON file.
@@ -493,33 +508,14 @@ class Scraptor:
 
         url = self._normalize_url(url)
 
-        if os.path.isdir(output_path) or output_path.endswith(("/", "\\")):
-            output_path = os.path.join(output_path, "Scraptor.json")
-
         try:
-            if debug:
-                print("[Scraptor] Surveillance mode: ACTIVE. Establishing connection...")
-
-            response = None
-            if debug:
-                for _ in tqdm(range(1), desc="Connecting", unit="req"):
-                    response = self.session.get(url, timeout=15)
-            else:
-                response = self.session.get(url, timeout=15)
+            response = self.session.get(url, timeout=15)
 
             if response.status_code != 200:
                 print(f"[Scraptor] HTTP {response.status_code}: {url}")
                 return None
 
             soup = BeautifulSoup(response.text, "html.parser")
-            parsed = urlparse(url)
-
-            ip_address = None
-            if not parsed.hostname.endswith(".onion"):
-                try:
-                    ip_address = socket.gethostbyname(parsed.hostname)
-                except:
-                    ip_address = None
 
             favicon_hash = None
             try:
@@ -538,16 +534,12 @@ class Scraptor:
 
             headers = dict(response.headers)
             analysis = {
-                "ip": ip_address,
                 "favicon_hash": favicon_hash,
                 "founded_guess": founding_year,
                 "allowed_methods": check_allowed_methods(url, self.session),
                 "cookie_analysis": analyze_cookies(headers),
                 "header_flags": basic_header_analysis(headers)
             }
-
-            if debug:
-                print("[Scraptor] Target dissected. Compiling intelligence...")
 
             data = {
                 "url": url,
