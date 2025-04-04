@@ -77,7 +77,6 @@ def export_data(data, export_as="json", class_name="Result", export_path=None):
     Returns:
         str: Full file path of the exported file, or error string on failure.
     """
-    # Determine default export path based on OS
     if export_path is None:
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             export_path = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -88,7 +87,6 @@ def export_data(data, export_as="json", class_name="Result", export_path=None):
 
     os.makedirs(export_path, exist_ok=True)
 
-    # Generate filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{class_name}_{timestamp}.{export_as}"
     filepath = os.path.join(export_path, filename)
