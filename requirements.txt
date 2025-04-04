@@ -7,7 +7,6 @@ stem
 lxml
 tqdm
 colorama
-fake-useragent
 python-dateutil
 opencv-python
 numpy
