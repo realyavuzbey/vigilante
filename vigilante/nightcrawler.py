@@ -3,7 +3,7 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
-from .utils import export_data, log
+from .utils import export_data, log, default_export_path
 from .session import Session
 
 class Nightcrawler:
@@ -35,16 +35,7 @@ class Nightcrawler:
         self.export_as = export_as
         self.debug = debug
         self.logger = lambda msg, level="INFO": log(msg, level=level, debug=self.debug)
-
-        if export_path is None:
-            if sys.platform.startswith("win") or sys.platform.startswith("linux"):
-                self.export_path = os.path.join(os.path.expanduser("~"), "Desktop")
-            elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
-                self.export_path = os.path.join(os.path.expanduser("~"), "Downloads")
-            else:
-                self.export_path = os.path.join(os.path.expanduser("~"), "Desktop")
-        else:
-            self.export_path = export_path
+        self.export_path = export_path if export_path else default_export_path()
 
     def _parse_tordex(self, html):
         """
@@ -58,6 +49,7 @@ class Nightcrawler:
         """
         results = []
         soup = BeautifulSoup(html, "html.parser")
+        # Each result is contained in a div with class 'result'
         for block in soup.select("div.result"):
             title_tag = block.find("h5")
             link_tag = block.find("h6")
@@ -87,6 +79,7 @@ class Nightcrawler:
         """
         results = []
         soup = BeautifulSoup(html, "html.parser")
+        # Each result is contained in a li element with class 'result'
         for li in soup.select("li.result"):
             title_tag = li.find("h4")
             desc_tag = li.find("p")
@@ -94,6 +87,7 @@ class Nightcrawler:
             title = title_tag.get_text(strip=True) if title_tag else "No Title"
             a_tag = title_tag.find("a") if title_tag else None
             raw_href = a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
+            # Build full URL if necessary
             full_url = f"https://ahmia.fi{raw_href}" if raw_href.startswith("/") else raw_href
             description = desc_tag.get_text(strip=True) if desc_tag else "No Description"
             domain = cite_tag.get_text(strip=True) if cite_tag else "Unknown"
@@ -117,16 +111,20 @@ class Nightcrawler:
         """
         results = []
         soup = BeautifulSoup(html, "html.parser")
+        # Find all anchor tags with an href attribute
         anchors = soup.find_all("a", href=True)
 
         for a in anchors:
             href = a['href']
+            # Check for specific URL patterns typical for Tor66 results
             if "url.php?u=" in href and ".onion" in href:
                 try:
+                    # Extract the onion URL from the query string
                     onion_url = href.split("url.php?u=")[1].split("&")[0]
                     title = a.get_text(strip=True) or "No Title"
                     domain = urlparse(onion_url).netloc or "Unknown"
 
+                    # Get the description text that follows a <br> tag, if available
                     br_tag = a.find_next("br")
                     description = ""
                     if br_tag:
@@ -161,6 +159,7 @@ class Nightcrawler:
         base_q = quote(term)
         all_results = {}
 
+        # Define search engines and their respective configurations
         search_engines = {
             "Ahmia": {
                 "url": f"https://ahmia.fi/search/?q={base_q}",
@@ -176,6 +175,7 @@ class Nightcrawler:
             }
         }
 
+        # Loop through each search engine and process the search
         for name, config in search_engines.items():
             if not config.get("active", True):
                 continue
@@ -202,7 +202,9 @@ class Nightcrawler:
                 self.logger(f"[{name}] ERROR: {str(e)}", level="ERROR")
                 all_results[name] = []
 
+        # Export data if export format is specified
         if self.export_as:
+            # The export_data function is expected to support the export_path parameter.
             export_data(all_results, export_as=self.export_as, export_path=self.export_path, class_name="Nightcrawler")
 
         return all_results
