@@ -187,6 +187,102 @@ class Scraptor:
         except Exception as e:
             print(f"[Scraptor] ERROR: get({mode}) failed - {e}")
             return [] if mode != "text" else None
+        
+    @classmethod
+    def snapshot(cls, url, image=True, depth=1, output_dir="snapshots"):
+        """
+        Crawls site and analyzes all image elements, extracting pixel, size, color and metadata info.
+
+        Args:
+            url (str): Root URL to crawl.
+            image (bool): Whether to download and analyze images.
+            depth (int): How deep to crawl internal links.
+            output_dir (str): Where to store downloaded files.
+
+        Returns:
+            list: Analysis result of all images across pages.
+        """
+        import requests, os
+        from urllib.parse import urljoin, urlparse
+        from bs4 import BeautifulSoup
+        from PIL import Image
+        from io import BytesIO
+        import numpy as np
+
+        visited = set()
+        queue = [(url, 0)]
+        images_data = []
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        while queue:
+            current_url, current_depth = queue.pop(0)
+            if current_url in visited or current_depth > depth:
+                continue
+            visited.add(current_url)
+
+            try:
+                resp = requests.get(current_url, timeout=10)
+                soup = BeautifulSoup(resp.text, "html.parser")
+
+                for a in soup.find_all("a", href=True):
+                    link = urljoin(current_url, a["href"])
+                    if urlparse(link).netloc == urlparse(url).netloc:
+                        queue.append((link, current_depth + 1))
+
+                for img in soup.find_all("img", src=True):
+                    img_url = urljoin(current_url, img["src"])
+                    try:
+                        img_resp = requests.get(img_url, timeout=10)
+                        img_data = BytesIO(img_resp.content)
+                        image_obj = Image.open(img_data).convert("RGB")
+                        np_img = np.array(image_obj)
+
+                        width, height = image_obj.size
+                        avg_color = tuple(np.mean(np_img.reshape(-1, 3), axis=0).astype(int))
+                        histogram = image_obj.histogram()
+                        brightness = np.mean(np_img)
+
+                        output_path = os.path.join(output_dir, os.path.basename(img["src"]))
+                        image_obj.save(output_path)
+
+                        images_data.append({
+                            "page_url": current_url,
+                            "img_url": img_url,
+                            "filename": os.path.basename(img["src"]),
+                            "resolution": f"{width}x{height}",
+                            "size_kb": round(len(img_resp.content)/1024, 2),
+                            "avg_color": avg_color,
+                            "brightness_score": round(float(brightness), 2),
+                            "histogram": histogram[:10],  # partial
+                            "saved_to": output_path
+                        })
+
+                        print(f"[Scraptor] 🖼 Analyzed: {img_url}")
+
+                    except Exception as e:
+                        print(f"[Scraptor] Failed image: {img_url} | {e}")
+
+            except Exception as e:
+                print(f"[Scraptor] Failed page: {current_url} | {e}")
+
+        return images_data
+
+    def _resolve_output_path(self, output_path, default_filename="Scraptor.json", fallback_folder="results"):
+        """
+        Handles logic for default output path resolution.
+        """
+        if not output_path or output_path.strip() == "":
+            output_path = os.path.join(basedir(fallback_folder), default_filename)
+
+        if not os.path.dirname(output_path):
+            output_path = os.path.join(os.getcwd(), output_path)
+
+        if os.path.isdir(output_path) or output_path.endswith(("/", "\\")):
+            output_path = os.path.join(output_path, default_filename)
+
+        return output_path
+
 
     def _crawl_all(self, url, download_source):
         """
@@ -348,7 +444,7 @@ class Scraptor:
                 links.append(absolute)
         return links
     
-    def extract_page(self, url, output_path="Scraptor.json", debug=False):
+    def extract_page(self, url, output_path="", debug=False):
         """
         Extracts all available metadata, headers, and forensic info from a single HTML page
         and saves it in a JSON file.
@@ -361,6 +457,8 @@ class Scraptor:
         Returns:
             str: Path to the saved JSON file.
         """
+        output_path = self._resolve_output_path(output_path)
+
         def check_allowed_methods(url, session):
             try:
                 r = session.options(url, timeout=10)
@@ -468,7 +566,10 @@ class Scraptor:
                 "analysis": analysis
             }
 
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            dir_path = os.path.dirname(output_path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
 
