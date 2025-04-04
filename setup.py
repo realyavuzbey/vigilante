@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="vigilante",
-    version="0.1.4",
+    version="0.1.5",
     packages=find_packages(),
     install_requires=[
         "requests[socks]",
@@ -16,7 +16,11 @@ setup(
         "tqdm",
         "faker",
         "click",
+        "docx",
+        "pymediainfo",
+        "exifread",
         "pillow",
+        "python-docx",
         "yt-dlp",
         "colorama",
         "aiohttp",
@@ -26,6 +30,7 @@ setup(
         "dnspython",
         "tldextract",
         "python-whois",
+        "fake-useragent",
         "tqdm",
         "python-dateutil",
         "urllib3",
