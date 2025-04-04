@@ -15,10 +15,13 @@ class Session:
 
     def __init__(self, rotate_ua=True, rotate_ip_on_init=False):
         self.session = requests.Session()
+        self.proxy_port = self._detect_tor_port()
+
         self.proxy = {
-            "http": "socks5h://127.0.0.1:9150",
-            "https": "socks5h://127.0.0.1:9150"
+            "http": f"socks5h://127.0.0.1:{self.proxy_port}",
+            "https": f"socks5h://127.0.0.1:{self.proxy_port}"
         }
+
         self.session.proxies.update(self.proxy)
 
         self.timeout = CONFIG["TIMEOUT"]
@@ -29,6 +32,9 @@ class Session:
 
         if rotate_ip_on_init:
             self.rotate_identity()
+
+    def _detect_tor_port(self):
+        return 9050 if is_mobile() else 9150
 
     def _generate_headers(self):
         """
