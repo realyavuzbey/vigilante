@@ -12,17 +12,29 @@ from .config import BLACKLISTED_UAS, FAKE_UAS
 
 def default_export_path():
     """
-    Determines the default export path based on the user's platform.
-
+    Returns a safe, accessible export path depending on OS/platform.
+    
+    - Android: /storage/emulated/0/Download
+    - Desktop (Win/Linux/macOS): ~/Download or ~/Desktop
+    - Fallback: current working directory
+    
     Returns:
-        str: A path string to Desktop (on Windows/Linux) or Downloads (on mobile).
+        str: Absolute path to export directory
     """
-    if sys.platform.startswith("win") or sys.platform.startswith("linux"):
-        return os.path.join(os.path.expanduser("~"), "Desktop")
-    elif "ANDROID_ROOT" in os.environ or sys.platform in ["ios"]:
-        return os.path.join(os.path.expanduser("~"), "Downloads")
-    else:
-        return os.path.join(os.path.expanduser("~"), "Desktop")
+    # Android (non-root, user-accessible)
+    if "ANDROID_ROOT" in os.environ or sys.platform == "android":
+        return "/storage/emulated/0/Download"
+
+    home = os.path.expanduser("~")
+    download = os.path.join(home, "Download")
+    if os.path.exists(download):
+        return download
+
+    desktop = os.path.join(home, "Desktop")
+    if os.path.exists(desktop):
+        return desktop
+
+    return os.getcwd()
         
 def basedir(name="results"):
     """
