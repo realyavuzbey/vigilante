@@ -5,7 +5,7 @@ import requests
 import platform
 import threading
 
-from .config import CONFIG, ua
+from .config import CONFIG
 from .nightcrawler import Nightcrawler
 from .utils import rotate_ip, export_data, rotate_ua, basedir
 from .session import Session
@@ -62,7 +62,7 @@ class Vigilante:
 
         # Initialize Nightcrawler with the Tor session
         self.nightcrawler = Nightcrawler(session=self.session, export_as=self.export_as)
-        self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session, debug=self.debug)
+        self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session)
 
         # Set IP type based on security level
         self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
