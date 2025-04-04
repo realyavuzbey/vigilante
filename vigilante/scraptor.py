@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 from .utils import basedir, log
 from .config import DEFAULT_EXTENSION, AUTO_EXTENSIONS
 from .session import Session
-from tqdm import tqdm
 
 downloads = basedir("downloads/websites")
 
