@@ -10,6 +10,7 @@ from .nightcrawler import Nightcrawler
 from .utils import rotate_ip, export_data, rotate_ua, basedir
 from .session import Session
 from .scraptor import Scraptor
+from .typhonn import Typhonn
 
 class Vigilante:
     """
