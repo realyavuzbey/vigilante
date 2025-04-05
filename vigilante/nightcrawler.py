@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, quote
 from .utils import export_data, log, default_export_path
 from .session import Session
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Nightcrawler:
     """
@@ -12,7 +13,7 @@ class Nightcrawler:
         =====
         
         Nightcrawler is a Tor-powered, modular dark web intelligence harvester that enables
-        keyword-based reconnaissance across multiple hidden service search engines (e.g., Ahmia, Tordex, Tor66).
+        keyword-based reconnaissance across multiple hidden service search engines (e.g., Tordex, Tor66).
 
         It leverages onion routing to maintain operational anonymity, supports flexible export formats 
         (JSON, CSV, Markdown, TXT), and offers customizable search workflows through session injection 
@@ -77,36 +78,6 @@ class Nightcrawler:
             })
         return results
 
-    def _parse_ahmia(self, html):
-        """
-        Parses HTML content from Ahmia and extracts structured search results.
-
-        Args:
-            html (str): HTML content to be parsed.
-
-        Returns:
-            list: A list of dictionaries containing the title, URL, description, and domain.
-        """
-        results = []
-        soup = BeautifulSoup(html, "html.parser")
-        for li in soup.select("li.result"):
-            title_tag = li.find("h4")
-            desc_tag = li.find("p")
-            cite_tag = li.find("cite")
-            title = title_tag.get_text(strip=True) if title_tag else "No Title"
-            a_tag = title_tag.find("a") if title_tag else None
-            raw_href = a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
-            full_url = f"https://ahmia.fi{raw_href}" if raw_href.startswith("/") else raw_href
-            description = desc_tag.get_text(strip=True) if desc_tag else "No Description"
-            domain = cite_tag.get_text(strip=True) if cite_tag else "Unknown"
-            results.append({
-                "title": title,
-                "url": full_url,
-                "description": description,
-                "domain": domain
-            })
-        return results
-
     def _parse_tor66(self, html):
         """
         Parses HTML content from Tor66 and extracts structured search results.
@@ -149,13 +120,30 @@ class Nightcrawler:
 
         return results
 
-    def crawl(self, term, engine_overrides=None):
+    def is_alive(self, url):
+        """
+        Checks if the given URL is reachable over Tor.
+
+        Args:
+            url (str): The .onion URL to check.
+
+        Returns:
+            bool: True if reachable, False otherwise.
+        """
+        try:
+            res = self.session.get(url, timeout=10, allow_redirects=True)
+            return res.status_code < 500
+        except Exception as e:
+            return False
+
+    def crawl(self, term, engine_overrides=None, check_alive=False):
         """
         Searches for the provided term across multiple dark web search engines.
 
         Args:
             term (str): The keyword or phrase to search for.
             engine_overrides (dict, optional): Overrides for the search engine configurations.
+            check_alive (bool, optional): If True, verifies if each URL is reachable.
 
         Returns:
             dict: A dictionary with search engine names as keys and lists of search result dictionaries as values.
@@ -164,10 +152,6 @@ class Nightcrawler:
         all_results = {}
 
         search_engines = {
-            "Ahmia": {
-                "url": f"https://ahmia.fi/search/?q={base_q}",
-                "parser": self._parse_ahmia
-            },
             "Tordex": {
                 "url": f"http://tordexu73joywapk2txdr54jed4imqledpcvcuf75qsas2gwdgksvnyd.onion/search?query={base_q}",
                 "parser": self._parse_tordex
@@ -196,6 +180,21 @@ class Nightcrawler:
 
                 html = response.text
                 page_results = parser(html) if parser else []
+
+                if check_alive and page_results:
+                    self.logger(f"[{name}] Checking {len(page_results)} links in parallel (20 threads)...", level="INFO")
+
+                    def _check_single(result):
+                        url = result["url"]
+                        result["alive"] = self.is_alive(url)
+                        return result
+
+                    with ThreadPoolExecutor(max_workers=20) as executor:
+                        future_to_result = {executor.submit(_check_single, r): r for r in page_results}
+                        for future in as_completed(future_to_result):
+                            result = future.result()
+                            self.logger(f"[{name}] Checked: {result['url']} → {'LIVE' if result['alive'] else 'DEAD'}", level="DEBUG")
+
                 results.extend(page_results)
 
                 self.logger(f"[{name}] {len(results)} result(s) found.", level="INFO")
