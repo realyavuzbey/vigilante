@@ -17,6 +17,18 @@ From passive recon to active content extraction, Vigilante is your entry point i
 - `Scraptor.all(url)` recursively crawls the site and downloads all internal pages.
 - Saves content under `downloads/websites/{domain}` while preserving folder structure.
 
+> ### **Typhonn**
+- Performs deep and surface-level vulnerability assessments on any given web target.
+- Automatically checks for common security misconfigurations: missing HSTS, CSP, and X-Frame headers.
+- Scans for insecure cookies, visible server info, outdated tech stacks, and metadata leaks.
+- Detects exposed directories like `/.git`, `/admin`, `/config`, `.env`, and backup files.
+- In `detail=True` mode, it also performs:
+  - SSL certificate fingerprinting and expiration checks
+  - Hidden honeypot detection using behavior-based heuristics
+  - Chained redirect loop analysis
+- Generates a full threat report with risk scoring and severity level (LOW, MEDIUM, HIGH, CRITICAL).
+- Designed for red/blue teams to integrate easily into OSINT and recon pipelines.
+
 > [!NOTE]
 > Ensure Tor is running locally. Default SOCKS proxy is usually at `127.0.0.1:9150` or `9050`.
 > You can install Tor via [Tor Browser](https://www.torproject.org/download/) or run `tor` as a background service.
