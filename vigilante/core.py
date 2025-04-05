@@ -14,7 +14,7 @@ from .scraptor import Scraptor
 class Vigilante:
     """
     Vigilante is a dark web search orchestrator that utilizes a Tor-enabled session
-    to perform secure searches and manage IP rotation based on security levels.
+    to perform secure searches and manage IP rotation based on security levels and more...
     
     Attributes:
         security (str): The security level ("1", "2", etc.).
