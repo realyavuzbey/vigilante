@@ -12,8 +12,9 @@ from .core import Vigilante
 from .nightcrawler import Nightcrawler
 from .scraptor import Scraptor
 from .session import Session
+from .typhonn import Typhonn
 
-__all__ = ["Vigilante", "Nightcrawler", "Session"]
+__all__ = ["Vigilante", "Nightcrawler", "Session", "Typhonn"]
 __version__ = "0.2.4"
 __author__ = "Yavuz Bey"
 __license__ = "MIT"
