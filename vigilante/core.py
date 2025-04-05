@@ -26,7 +26,6 @@ class Vigilante:
         proxy (dict): Proxy configuration for Tor connections.
         ip_type (str): Type of IP to use ('dynamic' or 'static').
         session (requests.Session): A session configured with Tor proxies.
-        nightcrawler (Nightcrawler): Instance for crawling dark web search engines.
         ip_info (dict): Information about the current IP environment.
         
     Methods:
