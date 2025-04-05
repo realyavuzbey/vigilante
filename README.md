@@ -5,17 +5,37 @@ From passive recon to active content extraction, Vigilante is your entry point i
 <br>
 
 > ### **Nightcrawler**
-- Supports multiple search engines including Ahmia and Tordex for deep web queries.
-- Returns structured results with title, description, URL, and domain extracted from dark web listings.
-- Automatically performs searches over the Tor network without manual interaction.
-- Uses robust, custom HTML parsers to handle changes in search engine DOM structures.
-- Allows exporting results to timestamped JSON files for later analysis or integration.
+- A **Tor-native dark web intelligence harvester** designed for keyword-based OSINT queries across hidden service search engines.
+- Supports engines like **Ahmia**, **Tordex**, and **Tor66**, automatically routing all traffic over Tor for full anonymity.
+- Extracts and normalizes structured data from search results: `title`, `url`, `description`, and `domain`.
+- Modular HTML parsers handle DOM inconsistencies across search engines—resilient to layout changes or obfuscation.
+- Provides **custom session injection** for fine-grained Tor control or external proxy chaining.
+- Results can be exported to `JSON`, `CSV`, `Markdown`, or `TXT`—perfect for intel pipelines or dashboards.
+- **Zero-click architecture**: once initialized, executes entire search lifecycle autonomously.
+- Ideal for:
+  - Threat intel teams monitoring deep web chatter.
+  - Journalists tracking underground marketplaces.
+  - Analysts pivoting from keywords to onion intelligence.
+- Built for speed, stealth, and structure.
 
 > ### **Scraptor**
-- Downloads any webpage with all static assets (HTML, CSS, JS, fonts, images).
-- `Scraptor.this(url)` downloads a single page.
-- `Scraptor.all(url)` recursively crawls the site and downloads all internal pages.
-- Saves content under `downloads/websites/{domain}` while preserving folder structure.
+- High-fidelity, OSINT-focused **web mirroring & forensic extraction engine** for clearnet and dark web.
+- Reconstructs full web pages including **HTML, CSS, JS, fonts, videos, images, and forms**.
+- `Scraptor.this(url)` → Downloads a single web page with all related static assets.
+- `Scraptor.all(url)` → Recursively crawls the domain and mirrors its entire internal structure.
+- Preserves original **directory hierarchy** under `downloads/websites/{domain}` for offline browsing.
+- Supports advanced modes:
+  - `mode="text"` to strip away all non-content elements for clean NLP-ready content.
+  - `mode="video"` or `mode="image"` to extract and download only visual assets.
+- Comes with a built-in `extract_page()` profiler:
+  - Extracts meta tags, form actions, headers, cookies, scripts, favicons, and structural info.
+  - Generates **structured JSON reports** for digital forensics, compliance, or analysis pipelines.
+- Ideal for:
+  - Dark web intelligence collection
+  - Static site fingerprinting
+  - Content mirroring for censorship circumvention
+  - Red teaming reconnaissance
+- Fully compatible with Tor or custom session for anonymous web scraping at scale.
 
 > ### **Typhonn**
 - Performs deep and surface-level vulnerability assessments on any given web target.
