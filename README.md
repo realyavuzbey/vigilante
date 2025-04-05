@@ -65,21 +65,6 @@ v = Vigilante()
 print(v.whois())
 ```
 
-
-### About Typhonn
-
-Typhonn does not promote, support, or facilitate any form of illegal activity, intrusion, or unauthorized access. Its primary use case is to assist cybersecurity professionals, developers, and analysts in detecting weak configurations, exposed endpoints, or potentially harmful content that may reside within websites or applications.
-
-Furthermore:
-- All potentially sensitive patterns (e.g., "sql injection", "rce", "payload") are included **only to recognize and flag them** in scanned content.
-- No exploitation, attack simulation, or weaponization is implemented in any part of this codebase.
-
-This repository is intended for:
-> - Blue teams doing surface scans
-> - Web devs securing their own infra
-> - Ethical hackers conducting risk assessments
-> - SOC analysts doing recon at scale
-
 ### **Legal Disclaimer**
 
 This project is intended for **educational and research purposes only**.  
