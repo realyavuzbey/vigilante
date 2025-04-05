@@ -3,6 +3,9 @@ Vigilante
 
 Framework Author: Yavuz Bey
 https://vigilante.top
+
+⚠ Vigilante is intended for research, privacy, and OSINT only.
+Any illegal or unethical use is strictly condemned by its creator.
 """
 
 from .core import Vigilante
