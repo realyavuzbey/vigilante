@@ -46,28 +46,23 @@ class Vigilante:
         self.export_as = export_as
         self.debug = debug
 
-        # Load configuration from CONFIG
         self.headers = CONFIG["HEADERS"]
         self.timeout = CONFIG["TIMEOUT"]
         self.tor_enabled = True
 
-        # Initialize session wrapper and obtain default Tor session
         self.session_wrapper = Session()
         self.session = self.session_wrapper.session
 
-        # Set up the proxy based on the platform (mobile or desktop)
         self.proxy = self._set_proxy()
         self.session.proxies.update(self.proxy)
         self.session.headers.update(self.headers)
 
-        # Initialize Nightcrawler with the Tor session
         self.nightcrawler = Nightcrawler(session=self.session, export_as=self.export_as)
         self.scraptor = Scraptor(downloads=basedir("downloads/websites"), session=self.session)
+        self.typhonn = Typhonn(url=None, session=self.session, detail=False, debug=self.debug)
 
-        # Set IP type based on security level
         self.ip_type = "dynamic" if self.security in ["1", "2"] else "static"
 
-        # Security adjustments
         if self.security == "2":
             self.timeout += 5
             self.headers["X-Security-Level"] = "Medium"
@@ -86,7 +81,6 @@ class Vigilante:
         if self.security in ["3", "4"]:
             self._renew_tor_identity()
 
-        # Check and store the current IP environment information
         self.ip_info = self._check_environment()
         self._start_pycache_cleaner(interval=60)
 
@@ -99,20 +93,17 @@ class Vigilante:
         """
         system = platform.system().lower()
         if "android" in system:
-            # Mobile platform uses port 9050
             return {
                 "http": "socks5h://127.0.0.1:9050",
                 "https": "socks5h://127.0.0.1:9050"
             }
         elif "windows" in system or "darwin" in system or "linux" in system:
-            # Desktop platforms use port 9150 (or fallbacks if needed)
             proxy_port = self._determine_proxy_port()
             return {
                 "http": f"socks5h://127.0.0.1:{proxy_port}",
                 "https": f"socks5h://127.0.0.1:{proxy_port}"
             }
         else:
-            # Safe default for other platforms
             return {
                 "http": "socks5h://127.0.0.1:9150",
                 "https": "socks5h://127.0.0.1:9150"
