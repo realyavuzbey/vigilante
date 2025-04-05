@@ -9,7 +9,6 @@ from .session import Session
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from .utils import log
-from .config import BADWORDS
 
 class Typhonn:
     """
@@ -37,7 +36,6 @@ class Typhonn:
     - Honeypot and redirect behavior detection.
     - Heuristic-based risk scoring with severity mapping.
     - "Detail" mode unlocks advanced forensic checks, including content analysis.
-    - Integrated badwords analysis to flag potentially dangerous or suspicious language in the content.
     """
 
     def __init__(self, url, detail=False, session=None, debug=False):
@@ -54,7 +52,6 @@ class Typhonn:
         self.detail = detail
         self.debug = debug
         self.logger = lambda msg, level="INFO": log(msg, level=level, debug=self.debug)
-        self.BADWORDS = BADWORDS
 
         self.report = {
             "url": self.url,
@@ -87,7 +84,7 @@ class Typhonn:
         - Metadata (meta tags)
         - Forms
         - Scripts
-        - (Optional) Deep analysis: redirect behavior, hidden paths, honeypot detection, and badwords scanning.
+        - (Optional) Deep analysis: redirect behavior, hidden paths, honeypot detection.
 
         Returns:
             dict: A full JSON-compatible report.
@@ -109,6 +106,7 @@ class Typhonn:
         self._analyze_meta(soup)
         self._analyze_forms(soup)
         self._analyze_scripts(soup)
+        self._analyze_text_content(soup)
 
         if self.detail:
             self.logger("[Typhonn] Running deep inspection (detail=True)")
