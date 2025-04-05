@@ -46,9 +46,10 @@ class Scraptor:
         self.last_url = None
         self.debug = debug
         self.logger = logger or (lambda msg, level="INFO": log(msg, level=level, debug=self.debug))
+        self.logger(f"[Scraptor] Initialized. Downloads at {self.downloads}, Export path at {self.export_path}", "DEBUG")
 
     @classmethod
-    def this(cls, url, download_source=False, downloads=None, session=None):
+    def this(cls, url, download_source=False, downloads=None, session=None, debug=False):
         """
         Download only the given page and its assets.
 
@@ -56,13 +57,13 @@ class Scraptor:
             url (str): The URL to scrape.
             download_source (bool): Whether to download assets (CSS, images, etc.).
         """
-        instance = cls(downloads=downloads, session=session)
+        instance = cls(downloads=downloads, session=session, debug=debug)
         normalized_url = instance._normalize_url(url)
         instance._scrape_page(normalized_url, download_source=download_source)
         return instance
 
     @classmethod
-    def all(cls, url, download_source=False, downloads=None, session=None):
+    def all(cls, url, download_source=False, downloads=None, session=None, debug=False):
         """
         Recursively crawl the given domain, downloading all internal pages and their assets.
 
@@ -70,7 +71,7 @@ class Scraptor:
             url (str): The root URL to start crawling.
             download_source (bool): Whether to download assets (CSS, images, etc.).
         """
-        instance = cls(downloads=downloads, session=session or requests.Session())
+        instance = cls(downloads=downloads, session=session or requests.Session(), debug=debug)
         normalized_url = instance._normalize_url(url)
         instance._crawl_all(normalized_url, download_source=download_source)
         return instance
@@ -176,7 +177,11 @@ class Scraptor:
                             continue
 
                         media_url = urljoin(url, src)
-                        filename = os.path.basename(urlparse(media_url).path)
+                        parsed_url = urlparse(media_url)
+
+                        filename = os.path.basename(parsed_url.path) or "index"
+                        filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+
                         local_path = os.path.join(target_dir, filename)
 
                         try:
@@ -211,12 +216,15 @@ class Scraptor:
         """
         Crawl and download all internal pages and assets of a domain.
         """
+        self.logger(f"[Scraptor] Starting recursive crawl from {url}", "INFO")
+
         queue = [url]
         while queue:
             current = queue.pop(0)
             if current in self.visited:
                 continue
             self.visited.add(current)
+            self.logger(f"[Scraptor] Crawling: {current}", "DEBUG")
 
             parsed = urlparse(current)
             base_domain = parsed.netloc
@@ -244,14 +252,16 @@ class Scraptor:
             except Exception as e:
                 self.logger(f"[Scraptor] ERROR crawling {current}: {e}", level="ERROR")
 
-    def _scrape_page(self, url, download_source):
+    def _scrape_page(self, url, download_source=True):
         """
         Downloads a single page and optionally its assets.
         """
+        self.logger(f"[Scraptor] Scraping {url}", "INFO")
+
         try:
             response = self.session.get(url, timeout=15)
             if response.status_code != 200:
-                self.logger(f"[Scraptor] HTTP {response.status_code}: {url}", level="WARNING")
+                self.logger(f"[Scraptor] Non-200 status: {response.status_code} from {url}", "WARNING")
                 return
 
             self.last_url = url
@@ -285,7 +295,8 @@ class Scraptor:
         sanitized_path = self._sanitize_path(path.lstrip("/"))
         local_path = os.path.join(root_path, sanitized_path)
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
-
+        
+        self.logger(f"[Scraptor] Page saved to {local_path}", "INFO")
         self._save_page_path = local_path
         with open(local_path, "w", encoding="utf-8") as f:
             f.write(html)
@@ -297,6 +308,7 @@ class Scraptor:
         """
         Sanitize file path for filesystem safety (removes illegal characters).
         """
+        path = path.split("?")[0]
         return os.path.sep.join([
             re.sub(r'[<>:"\\|?*#]', '_', part) for part in path.split('/')
         ])
@@ -306,6 +318,8 @@ class Scraptor:
         Downloads images, CSS, JS, video, and audio assets from the page.
         Rewrites HTML references to point to local versions.
         """
+        self.logger("[Scraptor] Downloading page assets...", "INFO")
+
         tags = {
             "img": "src",
             "script": "src",
@@ -332,9 +346,18 @@ class Scraptor:
 
                     asset_url = urljoin(base_url, src)
                     parsed_url = urlparse(asset_url)
-                    raw_path = parsed_url.path.lstrip("/")
+
+                    raw_path = parsed_url.path.lstrip("/") or "index"
+
+                    if raw_path.endswith("/"):
+                        raw_path += "index"
+
+                    raw_path = raw_path.split("?")[0]
+
                     sanitized_path = self._sanitize_path(raw_path)
+
                     local_path = os.path.join(root_path, sanitized_path)
+
                     os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
                     try:
@@ -347,11 +370,13 @@ class Scraptor:
 
                             relative_path = os.path.relpath(local_path, start=os.path.dirname(self._save_page_path)).replace("\\", "/")
                             el[attr] = relative_path
+                            self.logger(f"[Scraptor] Asset downloaded: {asset_url}", "DEBUG")
                     except Exception as e:
                         self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
+        self.logger("[Scraptor] HTML updated with local asset references", "DEBUG")
 
     def _extract_links(self, soup, base_url):
         """
