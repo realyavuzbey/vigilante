@@ -109,7 +109,6 @@ class Typhonn:
         self._analyze_meta(soup)
         self._analyze_forms(soup)
         self._analyze_scripts(soup)
-        self._analyze_text_content(soup)
 
         if self.detail:
             self.logger("[Typhonn] Running deep inspection (detail=True)")
@@ -212,28 +211,6 @@ class Typhonn:
             if re.search(r"atob\([^)]+\)", code):
                 suspicious.append("Base64 obfuscation pattern detected")
         self.report["detected_issues"]["scripts"] = suspicious
-
-    def _analyze_text_content(self, soup):
-        """
-        Scans the page's textual content for suspicious keywords based on a predefined badwords list.
-        Each badword adds +2 to the risk score.
-        """
-        self.logger("[Typhonn] Analyzing text content for suspicious keywords...")
-        text = soup.get_text(separator=" ", strip=True).lower()
-
-        found_badwords = [word for word in self.BADWORDS if word in text]
-
-        if found_badwords:
-            self.report["detected_issues"].setdefault("badwords", []).extend(found_badwords)
-            self.logger(f"[Typhonn] Badwords detected: {found_badwords}", level="WARNING")
-
-            increment = len(found_badwords) * 2
-            self.report["risk_score"] += increment
-            self.logger(f"[Typhonn] Risk score increased by {increment} due to badwords", level="INFO")
-
-            if any(word in found_badwords for word in ["rape", "pedo" "child", "abuse", "underage", "child porn"]):
-                self.report.setdefault("flags", []).append("CRIMINAL_CONTENT_POSSIBLE")
-                self.logger("[Typhonn] Criminal content flagged.", level="CRITICAL")
 
     def _check_redirect_behavior(self):
         """
