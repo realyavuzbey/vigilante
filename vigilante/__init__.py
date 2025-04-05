@@ -15,7 +15,7 @@ from .session import Session
 from .typhonn import Typhonn
 
 __all__ = ["Vigilante", "Nightcrawler", "Session", "Typhonn"]
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __author__ = "Yavuz Bey"
 __license__ = "MIT"
 __website__ = "https://vigilante.top"
