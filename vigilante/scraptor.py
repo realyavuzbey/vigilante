@@ -37,7 +37,6 @@ class Scraptor:
         """
         self.visited = set()
         self.session = session or Session().session
-        # Use the default_export_path from utils if not provided.
         self.downloads = downloads if downloads else default_export_path()
         self.export_path = export_path if export_path else default_export_path()
         os.makedirs(self.downloads, exist_ok=True)
@@ -351,7 +350,6 @@ class Scraptor:
                     except Exception as e:
                         self.logger(f"[Scraptor] Failed to download asset {asset_url}: {e}", level="ERROR")
 
-        # Save the modified HTML with updated paths
         with open(self._save_page_path, "w", encoding="utf-8") as f:
             f.write(str(soup))
 
