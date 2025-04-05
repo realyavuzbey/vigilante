@@ -6,7 +6,7 @@ From passive recon to active content extraction, Vigilante is your entry point i
 
 > ### **Nightcrawler**
 - A **Tor-native dark web intelligence harvester** designed for keyword-based OSINT queries across hidden service search engines.
-- Supports engines like **Ahmia**, **Tordex**, and **Tor66**, automatically routing all traffic over Tor for full anonymity.
+- Supports engines like **Tordex**, and **Tor66**, automatically routing all traffic over Tor for full anonymity.
 - Extracts and normalizes structured data from search results: `title`, `url`, `description`, and `domain`.
 - Modular HTML parsers handle DOM inconsistencies across search engines—resilient to layout changes or obfuscation.
 - Provides **custom session injection** for fine-grained Tor control or external proxy chaining.
