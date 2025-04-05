@@ -30,7 +30,7 @@ class Vigilante:
         
     Methods:
         whois(): A styled mission statement along with platform and Python info.
-        crawl(term): Returns structured search results from Ahmia, Tordex and more data.
+        crawl(term): Returns structured search results from Tordex and more data.
     """
 
     def __init__(self, security="1", export_as=None, debug=False):
