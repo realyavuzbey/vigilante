@@ -14,7 +14,14 @@ setup(
         'undetected-chromedriver',
         'selenium-stealth',
         'networkx',
-        'stem'
+        'stem',
+        'pysocks',
+        'fake-useragent',
+        'matplotlib',
+        'pandas',
+        'tqdm',
+        'dnspython',
+        'python-whois'
     ],
     entry_points={
         'console_scripts': [
