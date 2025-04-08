@@ -10,14 +10,13 @@ setup(
     include_package_data=True,
     install_requires=[
         'requests',
-        'requests[socks]',
-        "aiohttp",
-        "aiofiles",
-        "faker",
-        "scapy",
-        "browser-cookie3",
-        "playwright",
-        "httpx[socks]",
+        'aiohttp',
+        'aiofiles',
+        'faker',
+        'scapy',
+        'browser-cookie3',
+        'playwright',
+        'httpx[socks]',
         'beautifulsoup4',
         'undetected-chromedriver',
         'selenium-stealth',
@@ -38,6 +37,13 @@ setup(
     },
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License'
-    ]
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Topic :: Security',
+        'Intended Audience :: Developers',
+        'Environment :: Console'
+    ],
+    python_requires='>=3.8',
+    keywords='osint tor darkweb crawler recon cli vigilante',
+    platforms=['any']
 )
