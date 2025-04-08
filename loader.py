@@ -3,10 +3,13 @@ import time
 import os
 import sys
 
-def run(cmd, critical=True):
+def run(cmd, critical=True, ignore_codes=None):
     print(f"\n[RUNNING] {cmd}")
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
+        if ignore_codes and result.returncode in ignore_codes:
+            print("[WARN] Command exited with ignored code.")
+            return
         print("[ERROR] Command failed.")
         if critical:
             sys.exit(1)
