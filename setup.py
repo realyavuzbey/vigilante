@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vigilante',
-    version='0.1.0',
+    version="0.1.1",
     description='Dark Web Recon & Intelligence CLI by @realyavuzbey',
     author='Yavuz Bey',
     url='https://github.com/realyavuzbey/vigilante',
