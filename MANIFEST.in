@@ -1,0 +1,3 @@
+include README.md
+include app/config.yaml
+recursive-include app *.py
