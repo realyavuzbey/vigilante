@@ -1,5 +1,6 @@
 loader.py
 notes.txt
+upload.py
 dist/
 build/
 *.egg-info/
